@@ -10,7 +10,7 @@ use Throwable;
 /**
  * Idempotent production bootstrap for identity, authorization, and reference
  * catalogs. It deliberately does not create clinics, clinical records,
- * financial records, inventory, API credentials, or Shopify records.
+ * financial records, inventory, or API credentials.
  */
 final class ProductionBootstrapService
 {
@@ -44,7 +44,6 @@ final class ProductionBootstrapService
         'delivery_provider.view', 'delivery_provider.manage',
         'payment_status.view', 'payment_status.manage', 'payment_provider.view', 'payment_provider.manage',
         'core_api.view', 'core_api.create', 'core_api.manage',
-        'shopify.integration.view', 'shopify.integration.manage', 'shopify.order.import', 'shopify.order.reconcile',
         'pharmacy.dashboard.view', 'pharmacy.order.view', 'pharmacy.order.create', 'pharmacy.order.cancel',
         'pharmacy.inventory.view', 'pharmacy.inventory.batch.create', 'pharmacy.inventory.batch.adjust',
         'pharmacy.medicine.edit', 'pharmacy.prescription.review.view',
@@ -100,7 +99,7 @@ final class ProductionBootstrapService
             $this->requireTables($db);
             $clinic = $this->activeClinic($db, (int) $input['clinic_id']);
             if ($clinic === null) {
-                throw new InvalidArgumentException('ROOTINS_ADMIN_CLINIC_ID must reference an active clinic.');
+                throw new InvalidArgumentException('USHA_DERMA_ADMIN_CLINIC_ID must reference an active clinic.');
             }
 
             if (! $dryRun) {
@@ -141,17 +140,17 @@ final class ProductionBootstrapService
     {
         foreach (['name', 'email', 'password', 'clinic_id'] as $key) {
             if (! isset($input[$key]) || trim((string) $input[$key]) === '') {
-                throw new InvalidArgumentException('Missing required bootstrap environment variable: ROOTINS_ADMIN_' . strtoupper($key) . '.');
+                throw new InvalidArgumentException('Missing required bootstrap environment variable: USHA_DERMA_ADMIN_' . strtoupper($key) . '.');
             }
         }
         if (! filter_var($input['email'], FILTER_VALIDATE_EMAIL) || strlen((string) $input['email']) > 150) {
-            throw new InvalidArgumentException('ROOTINS_ADMIN_EMAIL is invalid.');
+            throw new InvalidArgumentException('USHA_DERMA_ADMIN_EMAIL is invalid.');
         }
         if (strlen((string) $input['password']) < 10) {
-            throw new InvalidArgumentException('ROOTINS_ADMIN_PASSWORD must be at least 10 characters.');
+            throw new InvalidArgumentException('USHA_DERMA_ADMIN_PASSWORD must be at least 10 characters.');
         }
         if (! ctype_digit((string) $input['clinic_id']) || (int) $input['clinic_id'] < 1) {
-            throw new InvalidArgumentException('ROOTINS_ADMIN_CLINIC_ID is invalid.');
+            throw new InvalidArgumentException('USHA_DERMA_ADMIN_CLINIC_ID is invalid.');
         }
     }
 
@@ -353,7 +352,7 @@ final class ProductionBootstrapService
         $base = strtolower(trim($name));
         $base = preg_replace('/[^a-z0-9]+/i', '_', $base) ?: strtolower((string) strtok($email, '@'));
         $base = trim($base, '_');
-        $base = substr($base !== '' ? $base : 'rootins_admin', 0, 90);
+        $base = substr($base !== '' ? $base : 'usha_derma_admin', 0, 90);
         $candidate = $base;
         $suffix = 1;
         while ($db->table('users')->where('username', $candidate)->countAllResults() > 0) {

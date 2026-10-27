@@ -46,7 +46,7 @@ final class AdminConfigurationSeeder extends Seeder
         }
 
         foreach ([
-            'general-settings' => ['site_name' => 'ROOTINS'],
+            'general-settings' => ['site_name' => 'USHA DERMA'],
             'clinic-settings' => ['timezone' => 'Asia/Kolkata'],
             'email-settings' => ['provider' => 'sendgrid'],
             'sms-settings' => ['provider' => 'twilio'],

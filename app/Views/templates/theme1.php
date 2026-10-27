@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="base-url" content="<?= base_url() ?>">
-  <title>ROOTINS::Dashboard</title>
+  <title>USHA DERMA::Dashboard</title>
   <!-- Bootstrap 4.6.2 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet" />
   <!-- Bootstrap Icons -->
@@ -34,18 +34,23 @@
 
   <!-- custom css -->
   <link href="<?= base_url('assets/css/theme1.css')?>" rel="stylesheet" />
-  <link href="<?= base_url('assets/css/style.css?v=20261014-local-lookup-modal1')?>" rel="stylesheet" />
-  <link href="<?= base_url('assets/css/ui-components.css?v=20261008-audit')?>" rel="stylesheet" />
-  <link href="<?= base_url('assets/css/rootins-pagination.css?v=20261010-pagination1')?>" rel="stylesheet" />
-  <link href="<?= base_url('assets/css/print.css?v=20261016-rootins-print1')?>" rel="stylesheet" />
+  <link href="<?= base_url('assets/css/style.css?v=20261027-doctor-dashboard2')?>" rel="stylesheet" />
+  <link href="<?= base_url('assets/css/ui-components.css?v=20261018-table-responsive1')?>" rel="stylesheet" />
+  <link href="<?= base_url('assets/css/usha-derma-pagination.css?v=20261010-pagination1')?>" rel="stylesheet" />
+  <link href="<?= base_url('assets/css/print.css?v=20261016-usha-derma-print1')?>" rel="stylesheet" />
+  <link href="<?= base_url('assets/css/module-topbar.css?v=20261025-module-topbar1')?>" rel="stylesheet" />
   <?= $this->renderSection('styles') ?>
-  <link href="<?= base_url('assets/css/rootins-monochrome.css?v=20261010-calendar-filters1')?>" rel="stylesheet" />
+  <link href="<?= base_url('assets/css/usha-derma-monochrome.css?v=20261025-pharmacy-invoice-print1')?>" rel="stylesheet" />
+  <link href="<?= base_url('assets/css/password-auth.css?v=20261025-password-ui1')?>" rel="stylesheet" />
+  <link href="<?= base_url('assets/css/mobile-responsive.css?v=20261025-mobile1')?>" rel="stylesheet" />
  
 </head>
 <?php $currentUiPath = trim(uri_string(), '/'); ?>
 <body class="<?= trim(implode(' ', array_filter([
     $currentUiPath === 'patient/login' ? 'patient-login-shell' : '',
     str_starts_with($currentUiPath, 'admin') ? 'admin-shell' : '',
+    str_starts_with($currentUiPath, 'account/password-') ? 'password-auth-body' : '',
+    str_starts_with($currentUiPath, 'pharmacy/billing/invoice/') ? 'pharmacy-invoice-print-body' : '',
 ]))) ?>">
   <a class="sr-only sr-only-focusable" href="#main-content">Skip to main content</a>
 
@@ -66,7 +71,7 @@
   <!-- ================= PRESERVED SIDEBAR MENU ================= -->
   <?= $this->renderSection('side-menu')?>
   <div
-    class="rootins-shell-overlay"
+    class="usha-derma-shell-overlay"
     id="sidebarOverlay"
     data-sidebar-close
     aria-hidden="true"
@@ -117,6 +122,7 @@
   
 
   <?= $this->renderSection('scripts')?>
+  <script src="<?= base_url('assets/js/password-auth.js?v=20261025-password-ui1') ?>"></script>
 
   <script>
     const sidebar = document.getElementById('sidebar');
@@ -141,9 +147,10 @@
       collapseButton.className = 'btn btn-sm btn-light d-none d-lg-inline-flex mr-2';
       collapseButton.setAttribute('aria-controls', 'sidebar');
       collapseButton.setAttribute('aria-expanded', 'true');
-      collapseButton.setAttribute('aria-label', 'Collapse navigation');
-      collapseButton.innerHTML = '<i class="bi bi-chevron-double-left" aria-hidden="true"></i>';
-      topHeader.querySelector('.d-flex.align-items-center')?.prepend(collapseButton);
+      collapseButton.setAttribute('aria-label', 'Toggle sidebar');
+      collapseButton.setAttribute('title', 'Toggle sidebar');
+      collapseButton.innerHTML = '<i class="bi bi-layout-sidebar" aria-hidden="true"></i>';
+      topHeader.querySelector('.d-flex.align-items-center, .usha-topbar-leading')?.prepend(collapseButton);
     }
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebarOverlay = document.getElementById('sidebarOverlay')
@@ -152,7 +159,7 @@
     function setSidebarOpen(open) {
       sidebar?.classList.toggle('show', open);
       const mobileOpen = open && window.innerWidth < 992;
-      document.body.classList.toggle('rootins-nav-open', mobileOpen);
+      document.body.classList.toggle('usha-derma-nav-open', mobileOpen);
       document.body.classList.toggle(
         'pharmacy-nav-open',
         mobileOpen && !!sidebar?.classList.contains('app-sidebar'),
@@ -173,22 +180,33 @@
     window.addEventListener('resize', function () {
       if (window.innerWidth >= 992) {
         sidebar?.classList.remove('show');
-        document.body.classList.remove('rootins-nav-open', 'pharmacy-nav-open');
+        document.body.classList.remove('usha-derma-nav-open', 'pharmacy-nav-open');
         sidebar?.setAttribute('aria-hidden', 'false');
         sidebarToggle?.setAttribute('aria-expanded', 'false');
         sidebarToggle?.setAttribute('aria-label', 'Open navigation');
       }
     });
+    function updateSidebarCollapseButton(button, collapsed) {
+      if (!button) return;
+      button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      button.setAttribute('aria-label', 'Toggle sidebar');
+      button.setAttribute('title', 'Toggle sidebar');
+      const icon = button.querySelector('i');
+      if (icon) icon.className = 'bi bi-layout-sidebar';
+    }
     document.getElementById('sidebarCollapseToggle')?.addEventListener('click', function () {
       document.body.classList.toggle('sidebar-collapsed');
       const collapsed = document.body.classList.contains('sidebar-collapsed');
-      this.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-      this.setAttribute('aria-label', collapsed ? 'Expand navigation' : 'Collapse navigation');
-      this.querySelector('i')?.classList.toggle('bi-chevron-double-right', collapsed);
-      this.querySelector('i')?.classList.toggle('bi-chevron-double-left', !collapsed);
-      try { localStorage.setItem('rootins-sidebar-collapsed', collapsed ? '1' : '0'); } catch (e) {}
+      updateSidebarCollapseButton(this, collapsed);
+      try { localStorage.setItem('usha-derma-sidebar-collapsed', collapsed ? '1' : '0'); } catch (e) {}
     });
-    try { if (localStorage.getItem('rootins-sidebar-collapsed') === '1') document.body.classList.add('sidebar-collapsed'); } catch (e) {}
+    try {
+      if (localStorage.getItem('usha-derma-sidebar-collapsed') === '1') document.body.classList.add('sidebar-collapsed');
+    } catch (e) {}
+    updateSidebarCollapseButton(
+      document.getElementById('sidebarCollapseToggle'),
+      document.body.classList.contains('sidebar-collapsed'),
+    );
 
     /* Keep secondary record actions together without changing their existing
        links, form submissions, or delegated event targets. */
@@ -226,6 +244,19 @@
         cell.appendChild(wrapper);
       });
     }
+    function ensureResponsiveTables(root) {
+      const scope = root || document;
+      const tables = [];
+      if (scope.nodeType === 1 && scope.matches('table')) tables.push(scope);
+      scope.querySelectorAll('table').forEach(function (table) { tables.push(table); });
+      tables.forEach(function (table) {
+        if (table.closest('.table-responsive')) return;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'table-responsive usha-derma-table-responsive';
+        table.parentNode.insertBefore(wrapper, table);
+        wrapper.appendChild(table);
+      });
+    }
     function prepareAdminResponsiveTables() {
       if (!document.body.classList.contains('admin-shell')) return;
       document.querySelectorAll('.table-responsive table').forEach(function (table) {
@@ -242,12 +273,38 @@
       });
     }
     function refreshAdminListPresentation() {
+      ensureResponsiveTables();
       prepareAdminResponsiveTables();
       compactAdminRowActions();
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', refreshAdminListPresentation);
     else refreshAdminListPresentation();
     window.addEventListener('resize', prepareAdminResponsiveTables);
+    if (window.MutationObserver) {
+      let responsiveTableRefreshQueued = false;
+      const scheduleResponsiveTableRefresh = function () {
+        if (responsiveTableRefreshQueued) return;
+        responsiveTableRefreshQueued = true;
+        const refresh = function () {
+          responsiveTableRefreshQueued = false;
+          prepareAdminResponsiveTables();
+          compactAdminRowActions();
+        };
+        if (window.requestAnimationFrame) window.requestAnimationFrame(refresh);
+        else window.setTimeout(refresh, 0);
+      };
+      new MutationObserver(function (mutations) {
+        let tableMarkupAdded = false;
+        mutations.forEach(function (mutation) {
+          mutation.addedNodes.forEach(function (node) {
+            if (node.nodeType !== 1) return;
+            if (node.matches('table, tbody, tr') || node.querySelector('table, tbody, tr')) tableMarkupAdded = true;
+            ensureResponsiveTables(node);
+          });
+        });
+        if (tableMarkupAdded) scheduleResponsiveTableRefresh();
+      }).observe(document.body, { childList: true, subtree: true });
+    }
 
     /*bt Select init*/
     $(function () {
@@ -277,7 +334,7 @@
       return iso ? `${iso.slice(8, 10)}-${iso.slice(5, 7)}-${iso.slice(0, 4)}` : '';
     }
 
-    window.rootinsDateToIso = function (selector) {
+    window.ushaDermaDateToIso = function (selector) {
       return isoDate($(selector).val());
     };
 

@@ -7,6 +7,7 @@ $routes->group('doctor', ['namespace' => 'Doctor\Controllers', 'filter' => 'auth
     $routes->get('/', 'Dashboard::index', ['filter' => 'permission:doctor.view']);
     $routes->get('appointments/patients/search', 'Records::patientSearch', ['filter' => 'permission:appointment.create']);
     $routes->get('appointments/(:num)', 'Appointment::view/$1', ['filter' => 'permission:appointment.view']);
+    $routes->post('appointments/collect-fee/(:num)', 'Appointment::collectFee/$1', ['filter' => 'permission:billing.edit']);
     $routes->get('clinical/appointments/search', 'Clinical::appointmentSearch', ['filter' => 'permission:consultation.view']);
     $routes->get('clinical/past-visits', 'Clinical::pastVisits', ['filter' => 'permission:consultation.view']);
     $routes->get('clinical/past-visits/(:num)', 'Clinical::pastVisit/$1', ['filter' => 'permission:consultation.view']);
@@ -25,6 +26,10 @@ $routes->group('doctor', ['namespace' => 'Doctor\Controllers', 'filter' => 'auth
     $routes->post('follow-ups/update/(:num)', 'Records::updateFollowUp/$1', ['filter' => 'permission:consultation.edit']);
     $routes->get('billing', 'Records::billing', ['filter' => 'permission:billing.view']);
     $routes->get('prescriptions', 'Records::prescriptions', ['filter' => 'permission:prescription.view']);
+    $routes->get('prescriptions/(:num)/edit', 'Records::editPrescription/$1', ['filter' => 'permission:prescription.edit']);
+    $routes->post('prescriptions/(:num)/edit', 'Records::updatePrescription/$1', ['filter' => 'permission:prescription.edit']);
+    $routes->get('prescription-clarifications', 'PrescriptionClarification::index', ['filter' => 'permission:prescription.view']);
+    $routes->post('prescription-clarifications/(:num)/respond', 'PrescriptionClarification::respond/$1', ['filter' => 'permission:prescription.edit']);
     $routes->get('video/(:num)', 'VideoConsultation::view/$1', ['filter' => 'permission:appointment.view']);
     $routes->post('video/(:num)/start', 'VideoConsultation::start/$1', ['filter' => 'permission:consultation.edit']);
     $routes->get('video/(:num)/status', 'VideoConsultation::status/$1', ['filter' => 'permission:consultation.edit']);
@@ -33,6 +38,7 @@ $routes->group('doctor', ['namespace' => 'Doctor\Controllers', 'filter' => 'auth
     $routes->post('video/(:num)/recording/start', 'VideoConsultation::startRecording/$1', ['filter' => 'permission:consultation.edit']);
     $routes->get('notifications', 'Notification::index', ['filter' => 'permission:doctor.view']);
     $routes->post('notifications/(:num)/read', 'Notification::read/$1', ['filter' => 'permission:doctor.view']);
+    $routes->post('notifications/read-all', 'Notification::readAll', ['filter' => 'permission:doctor.view']);
     $routes->get('profile', 'Profile::index', ['filter' => 'permission:doctor.view']);
     $routes->post('profile', 'Profile::update', ['filter' => 'permission:doctor.edit']);
     $routes->get('patients', 'Patient::index', ['filter' => 'permission:patient.view']);
@@ -45,5 +51,6 @@ $routes->group('doctor', ['namespace' => 'Doctor\Controllers', 'filter' => 'auth
     $routes->post('appointments/queue/(:num)', 'Clinical::queue/$1', ['filter' => 'permission:appointment.edit']);
     $routes->post('consultations/save', 'Clinical::saveConsultation', ['filter' => 'permission:consultation.edit']);
     $routes->post('clinical/save', 'Clinical::saveWorkspace', ['filter' => 'permission:consultation.edit']);
+    $routes->post('clinical/update-completed', 'Clinical::updateCompletedConsultation', ['filter' => 'permission:consultation.edit']);
     $routes->post('prescriptions/save', 'Clinical::savePrescription', ['filter' => 'permission:prescription.create']);
 });

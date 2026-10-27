@@ -1,11 +1,11 @@
 (function () {
     'use strict';
 
-    if (window.rootinsCrmBound && window.rootinsCrmModalLifecycleVersion) {
+    if (window.ushaDermaCrmBound && window.ushaDermaCrmModalLifecycleVersion) {
         return;
     }
-    window.rootinsCrmBound = true;
-    window.rootinsCrmModalLifecycleVersion = true;
+    window.ushaDermaCrmBound = true;
+    window.ushaDermaCrmModalLifecycleVersion = true;
 
     function clear(form) {
         form.querySelectorAll('.crm-error').forEach(function (error) {
@@ -16,9 +16,33 @@
         });
     }
 
+    function crmField(form, key) {
+        return form.querySelector('[name="' + key + '"]') || form.querySelector('[data-validation-name="' + key + '"]');
+    }
+
+    function setCrmDateValue(field, value) {
+        if (!field) return;
+        var text = String(value || '').slice(0, 10);
+        var match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        field.value = match ? match[3] + '-' + match[2] + '-' + match[1] : text;
+        var hidden = field.id && document.querySelector('[data-datepicker-hidden-for="' + field.id + '"]');
+        if (hidden) hidden.value = match ? text : '';
+    }
+
+    function resetCrmDatepickers(form) {
+        form.querySelectorAll('.datepicker').forEach(function (field) {
+            if (window.jQuery && window.jQuery.fn.datepicker && window.jQuery(field).data('datepicker')) {
+                window.jQuery(field).datepicker('clearDates');
+            }
+            field.value = '';
+            var hidden = field.id && document.querySelector('[data-datepicker-hidden-for="' + field.id + '"]');
+            if (hidden) hidden.value = '';
+        });
+    }
+
     function showErrors(form, data) {
         Object.keys(data || {}).forEach(function (key) {
-            var field = form.querySelector('[name="' + key + '"]');
+            var field = crmField(form, key);
             var error = form.querySelector('[data-error-for="' + key + '"]');
             if (field) {
                 field.classList.add('is-invalid');
@@ -247,7 +271,7 @@
 
     function restoreCrmBody() {
         if (document.querySelector('.modal.show')) return;
-        document.body.classList.remove('modal-open', 'rootins-modal-lock');
+        document.body.classList.remove('modal-open', 'usha-derma-modal-lock');
         document.body.style.removeProperty('padding-right');
         document.body.style.removeProperty('overflow');
         removeCrmBackdrops();
@@ -268,7 +292,7 @@
         modal.style.display = 'block';
         modal.setAttribute('aria-hidden', 'false');
         modal.setAttribute('role', 'dialog');
-        document.body.classList.add('modal-open', 'rootins-modal-lock');
+        document.body.classList.add('modal-open', 'usha-derma-modal-lock');
         document.body.style.overflow = 'hidden';
         var body = modal.querySelector('.modal-body');
         if (body) { body.setAttribute('tabindex', '-1'); body.focus({preventScroll: true}); }
@@ -293,8 +317,8 @@
     }
 
     function bindCrmModalFallback() {
-        if (window.rootinsCrmModalFallbackBound) return;
-        window.rootinsCrmModalFallbackBound = true;
+        if (window.ushaDermaCrmModalFallbackBound) return;
+        window.ushaDermaCrmModalFallbackBound = true;
         document.addEventListener('click', function (event) {
             var dismiss = event.target.closest('[data-dismiss="modal"]');
             var modal = event.target.closest('.crm-modal');
@@ -325,10 +349,10 @@
     }
 
     function bindModalLifecycle() {
-        if (!window.jQuery || !window.jQuery.fn.modal || window.rootinsCrmModalLifecycleBound) {
+        if (!window.jQuery || !window.jQuery.fn.modal || window.ushaDermaCrmModalLifecycleBound) {
             return;
         }
-        window.rootinsCrmModalLifecycleBound = true;
+        window.ushaDermaCrmModalLifecycleBound = true;
         window.jQuery(document)
             .on('shown.bs.modal', '.crm-modal', function () {
                 var modal = this;
@@ -357,6 +381,139 @@
     bindCrmModalFallback();
 
     document.addEventListener('click', function (event) {
+        var toggle = event.target.closest('[data-crm-filter-toggle]');
+        if (!toggle) return;
+        var panel = document.getElementById(toggle.getAttribute('aria-controls'));
+        if (!panel) return;
+        var open = panel.hasAttribute('hidden');
+        if (open) panel.removeAttribute('hidden'); else panel.setAttribute('hidden', 'hidden');
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        toggle.textContent = open ? 'Hide Filters' : 'Show Filters';
+    });
+
+    function bindPatientConversion() {
+        var modal = document.getElementById('crmConvertPatientModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'crmConvertPatientModal';
+            modal.className = 'modal fade crm-modal';
+            modal.setAttribute('tabindex', '-1');
+            modal.innerHTML = '<div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><div><span class="crm-eyebrow">CRM / LEAD</span><h2 class="modal-title h5 mb-0">Convert to Patient</h2></div><button type="button" class="close" data-dismiss="modal" aria-label="Close">&times;</button></div><div class="modal-body"><p class="mb-0">Create or reuse a patient record for <strong data-convert-name>this lead</strong>? Lead history will be preserved.</p><div class="alert alert-danger d-none mt-3 mb-0" data-convert-error></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button><button type="button" class="btn theme-btn" data-convert-submit>Convert to Patient</button></div></div></div>';
+            document.body.appendChild(modal);
+        }
+        if (!window.ushaDermaCrmDropdownFallbackBound) {
+            window.ushaDermaCrmDropdownFallbackBound = true;
+            document.addEventListener('click', function (event) {
+                var toggle = event.target.closest('.crm-table .dropdown-toggle');
+                if (toggle) {
+                    if (window.jQuery && window.jQuery.fn && window.jQuery.fn.dropdown) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    var wrapper = toggle.closest('.dropdown');
+                    var menu = wrapper && wrapper.querySelector('.dropdown-menu');
+                    if (!menu) return;
+                    document.querySelectorAll('.crm-table .dropdown-menu.show').forEach(function (openMenu) {
+                        if (openMenu !== menu) {
+                            openMenu.classList.remove('show');
+                            openMenu.style.display = 'none';
+                        }
+                    });
+                    var open = menu.classList.toggle('show');
+                    menu.style.display = open ? 'block' : 'none';
+                    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                    return;
+                }
+                if (!event.target.closest('.crm-table .dropdown-menu')) {
+                    document.querySelectorAll('.crm-table .dropdown-menu.show').forEach(function (openMenu) {
+                        openMenu.classList.remove('show');
+                        openMenu.style.display = 'none';
+                    });
+                }
+            }, true);
+        }
+        if (!window.ushaDermaCrmPatientConversionClickBound) {
+            window.ushaDermaCrmPatientConversionClickBound = true;
+            document.addEventListener('click', function (event) {
+                var button = event.target.closest('[data-convert-patient]');
+                if (!button) return;
+                event.preventDefault();
+                event.stopPropagation();
+                if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+                button.dataset.conversionBound = '1';
+                modal.dataset.url = button.getAttribute('data-convert-patient') || '';
+                modal.dataset.name = button.getAttribute('data-convert-name') || 'this lead';
+                modal.querySelector('[data-convert-name]').textContent = modal.dataset.name;
+                modal.querySelector('[data-convert-error]').classList.add('d-none');
+                if (window.jQuery && window.jQuery.fn.modal) window.jQuery(modal).modal('show');
+                else showCrmModal(modal, button);
+            }, true);
+        }
+        var submit = modal.querySelector('[data-convert-submit]');
+        if (submit && submit.dataset.conversionBound !== '1') {
+            submit.dataset.conversionBound = '1';
+            submit.addEventListener('click', async function () {
+                if (submit.disabled) return;
+                submit.disabled = true;
+                var errorBox = modal.querySelector('[data-convert-error]');
+                errorBox.classList.add('d-none');
+                var token = document.querySelector('input[name="csrf_rtn"]');
+                try {
+                    if (!modal.dataset.url) throw new Error('The conversion endpoint is missing.');
+                    var requestBody = new FormData();
+                    if (token && token.value) requestBody.append('csrf_rtn', token.value);
+                    var response = await fetch(modal.dataset.url, {method: 'POST', body: requestBody, headers: {'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': token ? token.value : ''}});
+                    var contentType = response.headers.get('content-type') || '';
+                    var payload = contentType.indexOf('application/json') !== -1 ? await response.json() : {status: false, msg: 'The server returned an unexpected response.'};
+                    if (!response.ok || !payload.status) {
+                        errorBox.textContent = payload.msg || 'The lead could not be converted.';
+                        if (payload.errors) errorBox.textContent += ' ' + Object.keys(payload.errors).map(function (key) { return payload.errors[key]; }).join(' ');
+                        errorBox.classList.remove('d-none');
+                        return;
+                    }
+                    var patient = payload.data || {};
+                    if (window.showSuccess) window.showSuccess((patient.already_converted ? 'This lead was already converted. ' : '') + 'Patient ' + (patient.name || '') + ' (' + (patient.registration_number || ('ID ' + patient.id)) + ') is ready.');
+                    if (window.jQuery && window.jQuery.fn.modal) window.jQuery(modal).modal('hide');
+                    window.setTimeout(function () { window.location.reload(); }, 500);
+                } catch (e) {
+                    errorBox.textContent = 'The conversion request failed. No changes were saved.';
+                    errorBox.classList.remove('d-none');
+                } finally { submit.disabled = false; }
+            });
+        }
+    }
+
+    function crmBaseUrl() { var meta = document.querySelector('meta[name="base-url"]'); return (window.base_url || window.BASE_URL || (meta ? meta.content : window.location.origin + '/')).replace(/\/$/, '') + '/'; }
+    function addPatientConversionActions() {
+        document.querySelectorAll('.crm-table tbody tr').forEach(function (row) {
+            var edit = row.querySelector('[data-crm-edit]');
+            var menu = row.querySelector('.dropdown-menu');
+            if (!edit || !menu || menu.querySelector('[data-convert-patient], [data-converted-patient-link]')) return;
+            var data; try { data = JSON.parse(edit.dataset.crmEdit); } catch (e) { data = {}; }
+            var leadLink = row.querySelector('a[href*="/history"]');
+            var leadIdMatch = leadLink && leadLink.getAttribute('href').match(/\/leads\/(\d+)\/history/);
+            data.id = data.id || (leadIdMatch ? leadIdMatch[1] : '');
+            data.full_name = data.full_name || (row.querySelector('[data-label="Lead"] small') || {}).textContent || 'this lead';
+            data.converted_patient_id = data.converted_patient_id || (row.querySelector('.crm-status-converted') ? '1' : '');
+            if (!data.id) return;
+            var item = document.createElement(data.converted_patient_id ? 'a' : 'button');
+            item.className = 'dropdown-item';
+            if (data.converted_patient_id) { item.href = crmBaseUrl() + 'admin/patients/view/' + data.converted_patient_id; item.dataset.convertedPatientLink = '1'; item.textContent = 'View patient'; }
+            else { item.type = 'button'; item.dataset.convertPatient = crmBaseUrl() + 'admin/crm/leads/' + data.id + '/convert/patient'; item.dataset.convertName = data.full_name || 'this lead'; item.textContent = 'Convert to Patient'; }
+            menu.insertBefore(item, menu.firstChild);
+        });
+        var path = window.location.pathname.split('/').filter(Boolean);
+        var leadIndex = path.indexOf('leads');
+        if (leadIndex >= 0 && path[leadIndex + 1] && document.querySelector('[data-can-convert-patient="1"]') && !document.querySelector('[data-convert-patient]') && document.querySelector('.crm-header')) {
+            var action = document.createElement('button'); action.type = 'button'; action.className = 'btn theme-btn mr-2'; action.dataset.convertPatient = crmBaseUrl() + 'admin/crm/leads/' + path[leadIndex + 1] + '/convert/patient'; action.dataset.convertName = document.querySelector('.crm-header h1')?.textContent || 'this lead'; action.textContent = 'Convert to Patient'; document.querySelector('.crm-header').appendChild(action);
+        }
+        bindPatientConversion();
+    }
+
+    addPatientConversionActions();
+    document.addEventListener('DOMContentLoaded', addPatientConversionActions);
+    window.setTimeout(addPatientConversionActions, 0);
+
+    document.addEventListener('click', function (event) {
         var reset = event.target.closest('[data-crm-reset="1"]');
         var edit = event.target.closest('[data-crm-edit]');
 
@@ -364,6 +521,7 @@
             var resetForm = document.querySelector('#crmLeadModal form');
             if (resetForm) {
                 resetForm.reset();
+                resetCrmDatepickers(resetForm);
                 resetForm.action = resetForm.dataset.createAction;
                 resetForm.querySelector('[name="id"]').value = '';
                 clear(resetForm);
@@ -395,9 +553,10 @@
                     serviceField.appendChild(legacyServiceOption);
                 }
                 Object.keys(row).forEach(function (key) {
-                    var field = form.querySelector('[name="' + key + '"]');
+                    var field = crmField(form, key);
                     if (field) {
-                        field.value = row[key] || '';
+                        if (field.classList.contains('datepicker') || field.dataset.validationName) setCrmDateValue(field, row[key]);
+                        else field.value = row[key] || '';
                     }
                 });
                 var editToggle = form.querySelector('.country-code-manual-toggle');
@@ -457,6 +616,30 @@
             return;
         }
         clear(form);
+        var invalidDate = false;
+        form.querySelectorAll('.datepicker[data-validation-name]').forEach(function (field) {
+            var value = String(field.value || '').trim();
+            var parts = null;
+            if (/^\d{2}-\d{2}-\d{4}$/.test(value)) parts = value.split('-');
+            if (/^\d{4}-\d{2}-\d{2}$/.test(value)) parts = [value.slice(8, 10), value.slice(5, 7), value.slice(0, 4)];
+            var valid = !value || !!parts;
+            if (valid && parts) {
+                var date = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+                valid = date.getFullYear() === Number(parts[2]) && date.getMonth() === Number(parts[1]) - 1 && date.getDate() === Number(parts[0]);
+                var hidden = field.id && document.querySelector('[data-datepicker-hidden-for="' + field.id + '"]');
+                if (valid && hidden) hidden.value = Number(parts[2]) + '-' + String(parts[1]).padStart(2, '0') + '-' + String(parts[0]).padStart(2, '0');
+            }
+            if (!valid) {
+                invalidDate = true;
+                field.classList.add('is-invalid');
+                var error = form.querySelector('[data-error-for="' + field.dataset.validationName + '"]');
+                if (error) error.textContent = 'Enter a valid date (dd-mm-yyyy).';
+            }
+        });
+        if (invalidDate) {
+            if (window.showError) window.showError('Please correct the highlighted date.');
+            return;
+        }
         if (!form.querySelector('[name="csrf_rtn"]')) {
             var token = document.querySelector('[name="csrf_rtn"]');
             if (token) {

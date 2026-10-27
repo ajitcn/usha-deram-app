@@ -1,4 +1,4 @@
-# ROOTINS Architecture and Product Decisions
+# USHA DERMA Architecture and Product Decisions
 
 **Status:** Baseline decision log v0.5
 **Date:** 2026-08-29
@@ -44,13 +44,13 @@
 - `[NEEDS_REVIEW]` Which Indian privacy rules, retention periods, consent model, and jurisdiction-specific obligations apply?
 - `[NEEDS_REVIEW]` Which compliance framework mapping and legal/medical interpretation must the production deployment satisfy?
 - `[NEEDS_REVIEW]` Final Cashfree/Razorpay production enablement, contracts, merchant configuration, credential/key ownership, settlement, disputes, refunds, reconciliation, grievance ownership, and provider applicability.
-- `[NEEDS_REVIEW]` Deployment readiness for Twilio Video, Twilio Messaging/WhatsApp, Twilio SendGrid, internal ROOTINS pharmacy, and Shiprocket, including contracts, credentials, configuration, consent/template/DLT, serviceability, webhooks, reconciliation, and final compliance review.
+- `[NEEDS_REVIEW]` Deployment readiness for Twilio Video, Twilio Messaging/WhatsApp, Twilio SendGrid, internal USHA DERMA pharmacy, and Shiprocket, including contracts, credentials, configuration, consent/template/DLT, serviceability, webhooks, reconciliation, and final compliance review.
 - `[NEEDS_REVIEW]` Legal/medical confirmation of the proposed internal Pharmacy Assistant role and any authorization boundary.
 - `[NEEDS_REVIEW]` Legal/medical confirmation of the proposed prescription states and reversal/amendment authority.
 - `[NEEDS_REVIEW]` Exact inventory, batch, expiry, substitution, refund, cancellation, delivery, and pharmacy/drug operating rules.
 - `[NEEDS_REVIEW]` Final recovery targets, encryption/key ownership, backup retention, and restore-test frequency; the RPO/RTO values above remain proposed.
 - `[NEEDS_REVIEW]` Exact KPI/report definitions, dashboard ownership, filters, targets, and retention of reporting data.
-- `[NEEDS_REVIEW]` Whether ROOTINS or a payment partner is the regulated payment aggregator/payment service party for each flow, and what merchant onboarding, settlement, dispute, and grievance obligations apply.
+- `[NEEDS_REVIEW]` Whether USHA DERMA or a payment partner is the regulated payment aggregator/payment service party for each flow, and what merchant onboarding, settlement, dispute, and grievance obligations apply.
 - `[NEEDS_REVIEW]` Whether the proposed ABDM/ABHA out-of-scope, integration-ready position is appropriate for the first release.
 - `[NEEDS_REVIEW]` Exact configurable retention periods and deletion/withdrawal exceptions for clinical, billing, audit, consent, and communication records.
 
@@ -61,7 +61,7 @@
 | Telehealth | Twilio Video first provider | `[PROPOSED]`; room-scoped short-lived tokens, no recording by default, consent and audit required; provider and Indian telemedicine review remain `[NEEDS_REVIEW]`. |
 | SMS/WhatsApp | Twilio Messaging/WhatsApp first provider | `[PROPOSED]`; Indian sender/template/DLT and WhatsApp consent/opt-out remain `[NEEDS_REVIEW]`. |
 | Email | Twilio SendGrid first provider | `[PROPOSED]`; secrets, configuration, deliverability, and deployment setup remain `[NEEDS_REVIEW]`. |
-| Pharmacy | Internal ROOTINS pharmacy/inventory/fulfilment | `[PROPOSED]` first-release scope; external pharmacy/commerce integration is deferred and provider-neutral. |
+| Pharmacy | Internal USHA DERMA pharmacy/inventory/fulfilment | `[PROPOSED]` first-release scope; external pharmacy/commerce integration is deferred and provider-neutral. |
 | Shipping | Shiprocket first provider behind an adapter | `[PROPOSED]`; credentials, serviceability, labels, webhooks, reconciliation, failures, and returns remain `[NEEDS_REVIEW]`. |
 | Commerce | External commerce synchronization | `[PROPOSED]` out of scope for first release; adapter-ready only. |
 

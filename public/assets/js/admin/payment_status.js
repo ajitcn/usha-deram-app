@@ -1,6 +1,6 @@
 (function ($) {
     'use strict';
-    if (window.rootinsPaymentStatusInlineBound) return;
+    if (window.ushaDermaPaymentStatusInlineBound) return;
 
     var modalNode = document.getElementById('paymentStatusModal');
 

@@ -1,5 +1,7 @@
 <?php
 $permissions = session('permissions') ?? [];
+$canEditDispensingQuantity = in_array('pharmacy.prescription.review.approve', $permissions, true) && ($prescription['can_review'] || !empty($prescription['can_edit_dispensing_quantity']));
+$prescription['can_edit_dispensing_quantity'] = $canEditDispensingQuantity;
 $recordJson = esc(json_encode($prescription, JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE), 'attr');
 $prescriptionId = (int) ($prescription['id'] ?? 0);
 $actionId = 'review-actions-' . $prescriptionId;
@@ -13,6 +15,11 @@ ob_start();
 <?php if ($prescription['can_review'] && in_array('pharmacy.prescription.review.approve', $permissions, true)): ?>
     <button class="dropdown-item prescription-review-action" role="menuitem" type="button" data-decision="approve" data-toggle="modal" data-target="#pharmacy-prescription-modal" data-record="<?= $recordJson ?>">
         <i class="bi bi-check2-circle mr-2 text-success" aria-hidden="true"></i>Approve
+    </button>
+<?php endif; ?>
+<?php if (!empty($prescription['can_edit_dispensing_quantity']) && in_array('pharmacy.prescription.review.approve', $permissions, true)): ?>
+    <button class="dropdown-item prescription-review-action" role="menuitem" type="button" data-decision="save_quantities" data-toggle="modal" data-target="#pharmacy-prescription-modal" data-record="<?= $recordJson ?>">
+        <i class="bi bi-box-seam mr-2 text-primary" aria-hidden="true"></i>Edit dispensing quantity
     </button>
 <?php endif; ?>
 <?php if ($prescription['can_review'] && in_array('pharmacy.prescription.review.reject', $permissions, true)): ?>

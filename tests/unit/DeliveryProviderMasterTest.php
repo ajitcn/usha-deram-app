@@ -39,10 +39,10 @@ final class DeliveryProviderMasterTest extends TestCase
         self::assertStringContainsString("data-no-global-loader", $script);
         self::assertStringContainsString("form: form[0]", $script);
         self::assertStringContainsString("complete: function", $common);
-        self::assertStringContainsString('function rootinsCleanupAjaxRequest', $common);
+        self::assertStringContainsString('function ushaDermaCleanupAjaxRequest', $common);
         self::assertStringContainsString('finally', $common);
         self::assertStringContainsString("removeClass('loading is-loading')", $common);
-        self::assertStringContainsString("rootins-submit-snapshot", $common);
+        self::assertStringContainsString("usha-derma-submit-snapshot", $common);
         self::assertStringContainsString("hide_loader()", $common);
     }
 

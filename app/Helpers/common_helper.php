@@ -27,20 +27,20 @@ if (!function_exists('getDayName')) {
 if (!function_exists('getYMD')) {
     function getYMD($dateStr): string
     {
-        return rootins_parse_date($dateStr) ?? '';
+        return usha_derma_parse_date($dateStr) ?? '';
     }
 }
 
 if (!function_exists('_dateOnly')) {
     function _dateOnly($dateStr): string
     {
-        return rootins_format_date($dateStr);
+        return usha_derma_format_date($dateStr);
     }
 }
 
-if (!function_exists('rootins_parse_date')) {
+if (!function_exists('usha_derma_parse_date')) {
     /** Normalize an exact user/API date to the database ISO format. */
-    function rootins_parse_date(mixed $value, bool $allowIso = true): ?string
+    function usha_derma_parse_date(mixed $value, bool $allowIso = true): ?string
     {
         $value = trim((string) $value);
 
@@ -68,11 +68,11 @@ if (!function_exists('rootins_parse_date')) {
     }
 }
 
-if (!function_exists('rootins_format_date')) {
+if (!function_exists('usha_derma_format_date')) {
     /** Format a stored/API date as the user-facing dd-mm-yyyy value. */
-    function rootins_format_date(mixed $value): string
+    function usha_derma_format_date(mixed $value): string
     {
-        $iso = rootins_parse_date($value);
+        $iso = usha_derma_parse_date($value);
 
         if ($iso === null) {
             return '';
@@ -82,9 +82,9 @@ if (!function_exists('rootins_format_date')) {
     }
 }
 
-if (!function_exists('rootins_format_time')) {
+if (!function_exists('usha_derma_format_time')) {
     /** Format a stored/API time as a user-facing 12-hour value. */
-    function rootins_format_time(mixed $value): string
+    function usha_derma_format_time(mixed $value): string
     {
         $value = trim((string) $value);
 
@@ -104,12 +104,39 @@ if (!function_exists('rootins_format_time')) {
     }
 }
 
+if (!function_exists('usha_derma_patient_age')) {
+    /** Prefer an explicitly recorded age, then derive whole years from DOB. */
+    function usha_derma_patient_age($age, $dateOfBirth, ?\DateTimeImmutable $today = null): ?int
+    {
+        if ($age !== null && trim((string) $age) !== '' && filter_var($age, FILTER_VALIDATE_INT) !== false) {
+            $explicitAge = (int) $age;
+            if ($explicitAge >= 0 && $explicitAge <= 130) {
+                return $explicitAge;
+            }
+        }
+
+        $dob = trim((string) $dateOfBirth);
+        if ($dob === '') {
+            return null;
+        }
+
+        try {
+            $birthDate = new \DateTimeImmutable($dob);
+            $referenceDate = $today ?? new \DateTimeImmutable('today');
+            return $birthDate > $referenceDate ? null : $birthDate->diff($referenceDate)->y;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+}
+
 if (!function_exists('patient_source_label')) {
     function patient_source_label(mixed $source): string
     {
         return match ((string) $source) {
             'self' => 'Self',
-            'shopify' => 'Shopify',
+            'core_api' => 'Core API',
+            'lead' => 'Lead',
             default => 'Unknown',
         };
     }
@@ -120,7 +147,8 @@ if (!function_exists('patient_source_badge_class')) {
     {
         return match ((string) $source) {
             'self' => 'badge-secondary',
-            'shopify' => 'badge-primary',
+            'core_api' => 'badge-info',
+            'lead' => 'badge-primary',
             default => 'badge-light',
         };
     }
@@ -149,5 +177,35 @@ if (!function_exists('display_permission_label')) {
         $text = trim((string) $label);
 
         return $text;
+    }
+}
+
+if (!function_exists('pharmacy_status_meta')) {
+    /** @return array{value:string,label:string,tone:string} */
+    function pharmacy_status_meta(string $domain, mixed $status): array
+    {
+        $value = strtolower(trim((string) $status));
+        $value = str_replace([' ', '-'], '_', $value);
+        $maps = [
+            'order' => [
+                'pending' => ['Pending', 'pending'], 'approved' => ['Approved', 'approved'], 'confirmed' => ['Confirmed', 'approved'],
+                'processing' => ['Processing', 'processing'], 'ready' => ['Ready', 'success'], 'fulfilled' => ['Completed', 'success'],
+                'delivered' => ['Delivered', 'success'], 'cancelled' => ['Cancelled', 'danger'], 'rejected' => ['Rejected', 'danger'], 'failed' => ['Failed', 'danger'],
+            ],
+            'payment' => [
+                'pending' => ['Unpaid', 'pending'], 'unpaid' => ['Unpaid', 'pending'], 'authorized' => ['Authorized', 'approved'],
+                'partially_paid' => ['Partially Paid', 'partial'], 'paid' => ['Paid', 'success'], 'succeeded' => ['Paid', 'success'], 'failed' => ['Failed', 'danger'],
+                'cancelled' => ['Cancelled', 'danger'], 'refunded' => ['Refunded', 'refunded'],
+            ],
+            'delivery' => [
+                'pending' => ['Pending', 'pending'], 'packed' => ['Packed', 'processing'], 'dispatched' => ['Dispatched', 'processing'],
+                'out_for_delivery' => ['Out for Delivery', 'processing'], 'delivered' => ['Delivered', 'success'],
+                'failed' => ['Failed', 'danger'], 'returned' => ['Returned', 'danger'],
+            ],
+        ];
+        if ($value === '' || $value === 'not_recorded' || $value === 'unknown') return ['value' => '', 'label' => 'Not recorded', 'tone' => 'neutral'];
+        $entry = $maps[$domain][$value] ?? null;
+        if ($entry === null) return ['value' => $value, 'label' => 'Unknown status', 'tone' => 'neutral'];
+        return ['value' => $value, 'label' => $entry[0], 'tone' => $entry[1]];
     }
 }

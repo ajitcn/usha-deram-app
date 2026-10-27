@@ -45,7 +45,7 @@
             return;
         }
 
-        const placeholder = document.createComment('rootins-pharmacy-actions-menu');
+        const placeholder = document.createComment('usha-derma-pharmacy-actions-menu');
         menu.parentNode.insertBefore(placeholder, menu);
         document.body.appendChild(menu);
         wrapper.data('pharmacy-menu', menu).data('pharmacy-menu-placeholder', placeholder);

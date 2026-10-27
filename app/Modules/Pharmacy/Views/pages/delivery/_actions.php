@@ -17,7 +17,7 @@ ob_start();
     <button class="dropdown-item js-delivery-related" role="menuitem" type="button" data-related-url="<?= esc(base_url('pharmacy/orders/detail/' . $orderId), 'attr') ?>" data-related-title="Order details"><i class="bi bi-bag mr-2" aria-hidden="true"></i>View order</button>
 <?php endif; ?>
 <?php if (in_array('pharmacy.billing.view', $permissions, true)): ?>
-    <button class="dropdown-item js-delivery-related" role="menuitem" type="button" data-related-url="<?= esc(base_url('pharmacy/billing/detail/' . $orderId), 'attr') ?>" data-related-title="Invoice details"><i class="bi bi-receipt mr-2" aria-hidden="true"></i>View invoice</button>
+    <a class="dropdown-item" role="menuitem" href="<?= esc(base_url('pharmacy/billing/invoice/' . $orderId), 'attr') ?>"><i class="bi bi-receipt mr-2" aria-hidden="true"></i>View invoice</a>
     <button class="dropdown-item js-delivery-related" role="menuitem" type="button" data-related-url="<?= esc(base_url('pharmacy/billing/detail/' . $orderId), 'attr') ?>" data-related-title="Payment details"><i class="bi bi-credit-card mr-2" aria-hidden="true"></i>View payment</button>
 <?php endif; ?>
 <?php if (in_array('pharmacy.prescription.review.view', $permissions, true) && !empty($row['prescription_id'])): ?>

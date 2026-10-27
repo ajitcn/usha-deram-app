@@ -7,8 +7,8 @@ final class PaginationUiTest extends CIUnitTestCase
     public function testSharedPaginationStylesAndModuleContractsExist(): void
     {
         $theme = file_get_contents(ROOTPATH . 'app/Views/templates/theme1.php');
-        $styles = file_get_contents(ROOTPATH . 'public/assets/css/rootins-pagination.css');
-        self::assertStringContainsString('rootins-pagination.css', $theme);
+        $styles = file_get_contents(ROOTPATH . 'public/assets/css/usha-derma-pagination.css');
+        self::assertStringContainsString('usha-derma-pagination.css', $theme);
         foreach (['ri-pagination', 'ri-page-link.is-active', 'ri-page-ellipsis', 'pointer-events: none', '@media (max-width: 575.98px)'] as $contract) {
             self::assertStringContainsString($contract, $styles);
         }

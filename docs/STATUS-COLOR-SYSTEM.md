@@ -1,6 +1,6 @@
-# ROOTINS status-color system
+# USHA DERMA status-color system
 
-ROOTINS uses one presentation-only status palette across Admin, Doctor, Patient, and Pharmacy. The palette does not change stored values, validation, routes, permissions, APIs, or workflow rules.
+USHA DERMA uses one presentation-only status palette across Admin, Doctor, Patient, and Pharmacy. The palette does not change stored values, validation, routes, permissions, APIs, or workflow rules.
 
 ## Shared classes
 
@@ -14,7 +14,7 @@ Use `ri-status` with one tone modifier. The same modifiers can be applied to bad
 | `ri-status--red` | failed/invalid | Failed, Rejected, Cancelled, Returned, Expired |
 | `ri-status--gray` | neutral/unset | Draft, Inactive, Unknown, Not available |
 | `ri-status--orange` | attention | Clarification required, Warning, Near expiry |
-| `ri-status--purple` | external source | Shopify, External source |
+| `ri-status--purple` | external source | External source |
 | `ri-status--charcoal` | internal source | Self, Internal source |
 
 Example:
@@ -23,7 +23,7 @@ Example:
 <span class="badge ri-status ri-status--amber ri-status-dot">Pending</span>
 ```
 
-The shared CSS variables are declared in `public/assets/css/rootins-monochrome.css`. `public/assets/js/status-colors.js` adds the same tone classes to existing rendered status elements and AJAX-inserted content by reading the existing display text/classes only.
+The shared CSS variables are declared in `public/assets/css/usha-derma-monochrome.css`. `public/assets/js/status-colors.js` adds the same tone classes to existing rendered status elements and AJAX-inserted content by reading the existing display text/classes only.
 
 Status dots are optional. Add `ri-status-dot` when a compact visual indicator is useful; the dot inherits the semantic tone and keeps the label text intact.
 

@@ -562,7 +562,7 @@ final class PatientWorkflowTest extends TestCase
         $routes = file_get_contents(ROOTPATH . 'app/Config/Routes.php');
         $controller = file_get_contents(ROOTPATH . 'app/Modules/Doctor/Controllers/Api/Patients.php');
         self::assertStringContainsString("api/v1/patients", $routes);
-        self::assertStringContainsString("ROOTINS_API_TOKEN", $controller);
+        self::assertStringContainsString("USHA_DERMA_API_TOKEN", $controller);
         self::assertStringContainsString("hash_equals", $controller);
         self::assertStringContainsString("Too many requests.", $controller);
         self::assertStringContainsString("'source_type' => 'api'", $controller);

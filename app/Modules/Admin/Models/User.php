@@ -14,7 +14,7 @@ class User extends Model
 
     protected $useSoftDeletes = true;
 
-    protected $allowedFields = ['doctor_id', 'country_code_id', 'telephone_country_code_id', 'username', 'password', 'email', 'mobile', 'mobile_normalized', 'last_login', 'last_login_ip', 'failed_login_attempts', 'locked_until', 'status'];
+    protected $allowedFields = ['doctor_id', 'country_code_id', 'telephone_country_code_id', 'username', 'password', 'password_changed_at', 'email', 'mobile', 'mobile_normalized', 'last_login', 'last_login_ip', 'failed_login_attempts', 'locked_until', 'status'];
 
     protected $useTimestamps = true;
 

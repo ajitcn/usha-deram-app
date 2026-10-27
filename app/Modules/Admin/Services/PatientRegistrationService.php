@@ -47,7 +47,7 @@ class PatientRegistrationService
         // arbitrary source_type values.
         $sourceType = (string) ($source['source_type'] ?? 'self');
 
-        if (!in_array($sourceType, ['self', 'shopify'], true)) {
+        if (!in_array($sourceType, ['self', 'core_api'], true)) {
             throw new InvalidArgumentException('Patient source is invalid.');
         }
         unset($patientData['source_type']);

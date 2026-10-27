@@ -206,7 +206,7 @@ class DoctorConsultationFee extends BaseAdminController
             return ['status' => false, 'errors' => $this->validator->getErrors()];
         }
 
-        $effectiveFrom = rootins_parse_date($data['effective_from'], false);
+        $effectiveFrom = usha_derma_parse_date($data['effective_from'], false);
         if ($effectiveFrom === null) {
             return ['status' => false, 'errors' => ['effective_from' => 'Effective From must be a valid date in dd-mm-yyyy format.']];
         }

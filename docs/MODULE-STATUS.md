@@ -1,4 +1,4 @@
-# ROOTINS Module Status
+# USHA DERMA Module Status
 
 **Version:** 0.5 milestone update
 **As of:** 2026-08-29  
@@ -27,7 +27,7 @@ The Doctor appointment register now has scoped server-side pagination with searc
 | Authorization | Partial | Auth/permission filters and Admin permission usage exist; complete permission matrix and audit coverage are required. |
 | Database foundation | Partial / active | Clinics, users/roles/permissions, doctors, schedules, leaves, fees, commissions, documents, patients, appointments, consultations, prescriptions, prescription items, and medicines have migrations. |
 | Billing/payments | Partial | Pharmacy medicine-order manual payment reconciliation allows any active payment status, requires a Payment Provider, keeps Reference number and Reason / remarks optional, and records manual reconciliation when no active adapter/credentials are available without calling an unconfigured external provider. Invoice totals, gateway callbacks, refunds, and settlement reconciliation remain incomplete. |
-| Audit logs | Partial | Structured `ROOTINS_AUDIT` events now persist sanitized context to `audit_logs` with correlation IDs, actor IDs, safe masking, scoped Admin viewing, and bounded context. Search, retention, and full action coverage are not implemented. |
+| Audit logs | Partial | Structured audit events now persist sanitized context to `audit_logs` with correlation IDs, actor IDs, safe masking, scoped Admin viewing, and bounded context. Search, retention, and full action coverage are not implemented. |
 | Notifications | Partial | Provider-independent dispatch service now validates requests, selects Twilio/SendGrid provider names, returns idempotency/retry metadata, and remains dry-run by default; live delivery, consent, and durable delivery tracking are not implemented. |
 | Backup/restore and system logs | Partial | System Logs now reads scoped `audit_logs` with server-side search/filter/pagination. Backup/Restore reports local readiness only and deliberately does not fake backup or restore operations. |
 | Tests | Partial | CI4 starter test structure exists; feature-specific coverage is still required for implemented Admin workflows. |
@@ -71,7 +71,7 @@ IAM route evidence: `GET /admin/access`; `POST /admin/access/users/create`; `POS
 | Telehealth | PROPOSED | Twilio Video is the first provider; room-scoped short-lived tokens, no recording by default, consent, and audit are required. No integration is verified. |
 | SMS/WhatsApp | Partial | Twilio Messaging/WhatsApp provider placeholders are selected by the notification boundary; sender/template/DLT, consent/opt-out, and live delivery are not verified. |
 | Email | Partial | Twilio SendGrid provider placeholder is selected by the notification boundary; secrets, configuration, deliverability, and live delivery are not verified. |
-| Pharmacy | PROPOSED | Internal ROOTINS pharmacy/inventory/fulfilment is first-release scope; external pharmacy/commerce integration is deferred. |
+| Pharmacy | PROPOSED | Internal USHA DERMA pharmacy/inventory/fulfilment is first-release scope; external pharmacy/commerce integration is deferred. |
 | Shipping | PROPOSED | Shiprocket is the first adapter target; credentials, serviceability, labels, webhooks, reconciliation, and returns are not verified. |
 | Commerce synchronization | Missing | External commerce synchronization is out of scope for the first release; adapter-ready only. |
 
@@ -252,7 +252,7 @@ browser/UAT verification remains outstanding.
 
 ### UI/UX modernization evidence — 2026-08-30
 
-The shared theme now provides centralized ROOTINS design tokens and reusable
+The shared theme now provides centralized USHA DERMA design tokens and reusable
 visual rules for cards, forms, tables, buttons, badges, alerts, focus states,
 loading overlays, responsive content, and mobile navigation. All panel layouts
 use the shared sidebar/header shell; the Patient portal uses labelled controls
@@ -282,7 +282,7 @@ sign-off remain release gates.
 - `[NEEDS_REVIEW]` Indian privacy, medical-record, tax, consent, retention, and compliance applicability.
 - `[NEEDS_DECISION]` Patient identity verification, duplicate detection, and controlled merge policy.
 - `[NEEDS_REVIEW]` Cashfree/Razorpay production configuration, merchant onboarding, settlement, refunds, partial payments, disputes, and cancellation charges.
-- `[NEEDS_REVIEW]` Deployment readiness for Twilio Video, Twilio Messaging/WhatsApp, Twilio SendGrid, internal ROOTINS pharmacy, and Shiprocket; Cashfree/Razorpay remain approved candidates pending production review.
+- `[NEEDS_REVIEW]` Deployment readiness for Twilio Video, Twilio Messaging/WhatsApp, Twilio SendGrid, internal USHA DERMA pharmacy, and Shiprocket; Cashfree/Razorpay remain approved candidates pending production review.
 - `[NEEDS_REVIEW]` Legal/medical confirmation of the proposed internal Pharmacy Assistant role and prescription review authority.
 - `[NEEDS_REVIEW]` Proposed inventory, batch, expiry, substitution, delivery, and order-reconciliation rules.
 - `[NEEDS_REVIEW]` Backup encryption/key ownership, retention, restore frequency, and final recovery targets; RPO 24 hours/RTO 8 hours remain proposed.
@@ -489,7 +489,7 @@ Locality with searchable selectors and manual fallback. Existing hierarchical
 lookups are reused; normalized missing values are created in parent scope and
 stored by ID. The Doctor patient create/update API accepts the same location
 contract. Migration `2026-09-01-140000_AddPatientLocationLocalities` is applied
-to the local `rootins` database in batch 24. Authenticated browser UAT and the
+to the local `usha-derma` database in batch 24. Authenticated browser UAT and the
 Doctor form UI remain `UNVERIFIED`.
 
 ### Complete project review evidence — 2026-09-02
@@ -530,7 +530,7 @@ Implementation sequence:
    reversible migration.
 3. Validate clinic/doctor scope, duplicate mobile identity, and appointment
    conflicts before committing an optional appointment.
-4. Expose the approved external API only when `ROOTINS_API_TOKEN` is configured;
+4. Expose the approved external API only when `USHA_DERMA_API_TOKEN` is configured;
    keep rate limiting, safe responses, audit logging, and provider credentials
    outside source control.
 5. Add focused contract tests, then complete authenticated UAT and provider
@@ -678,7 +678,7 @@ live provider behavior, attachments, and vitals remain `UNVERIFIED`.
 Status: `Partial / static verification passed`. Doctor patient create/edit,
 appointment create/reschedule/filter, follow-up create, notification filter, and
 prescription detail preview use the shared `ri-scroll-modal` shell with a
-scrollable body and visible header/footer actions. `RootinsModal` centralizes
+scrollable body and visible header/footer actions. `UshaDermaModal` centralizes
 initial focus, keyboard focus trapping, focus restoration, and background scroll
 lock for dynamically opened Bootstrap modals. Prescription details now open in a
 same-page modal instead of an inline expanding block.

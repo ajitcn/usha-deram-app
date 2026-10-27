@@ -14,6 +14,13 @@ $displayTime = static function ($value): string {
     return substr((string) ($value ?? ''), 0, 5);
 };
 $selectedAppointment = $selectedAppointment ?? null;
+$selectedPrescription = $selectedPrescription ?? null;
+$selectedPrescriptionItems = $selectedPrescriptionItems ?? [];
+$prescriptionEditDecision = $prescriptionEditDecision ?? ['allowed' => false, 'message' => '', 'completion_at' => null];
+$clinicalEditMode = (bool) ($clinicalEditMode ?? false);
+$clinicalEditRequested = (bool) ($clinicalEditRequested ?? false);
+$clinicalCompleted = $selectedAppointment !== null && (string) ($selectedAppointment['consultation_status'] ?? '') === 'completed';
+$clinicalReadOnly = $clinicalCompleted && ! $clinicalEditMode;
 $patientName = static function (array $appointment): string {
     return trim(implode(' ', array_filter([
         $appointment['patient_first_name'] ?? '',
@@ -29,17 +36,8 @@ $patientContact = static function (array $appointment): string {
     );
 };
 $patientAge = static function (array $appointment): string {
-    $dob = trim((string) ($appointment['patient_date_of_birth'] ?? ''));
-
-    if ($dob === '') {
-        return 'Not recorded';
-    }
-
-    try {
-        return (string) (new \DateTimeImmutable($dob))->diff(new \DateTimeImmutable('today'))->y . ' years';
-    } catch (\Throwable) {
-        return 'Not recorded';
-    }
+    $age = usha_derma_patient_age($appointment['patient_age'] ?? null, $appointment['patient_date_of_birth'] ?? null);
+    return $age === null ? 'Not recorded' : $age . ' years';
 };
 $patientLocation = static function (array $appointment): string {
     $parts = array_filter([
@@ -128,6 +126,7 @@ $clinicalActionContext = [
     'prescription' => $selectedPrescription === null ? null : [
         'number' => $selectedPrescription['prescription_number'] ?? '',
         'date' => $displayDate($selectedPrescription['prescription_date'] ?? ''),
+        'medicine_duration' => $selectedPrescription['medicine_duration'] ?? null,
         'items' => array_map(static fn (array $item): array => [
             'medicine_id' => (int) ($item['medicine_id'] ?? 0),
             'medicine_name' => $item['medicine_name'] ?? '',
@@ -331,10 +330,10 @@ $clinicalActionContext = [
 
     <?php if ($selectedAppointment !== null): ?>
     <div id="clinical-patient-specific-content" class="clinical-workspace" data-clinical-patient-specific>
-    <form id="clinical-workspace-form" class="clinical-workspace-form" method="post" action="<?= base_url('doctor/clinical/save') ?>" novalidate data-appointment-id="<?= $selectedAppointment !== null ? (int) $selectedAppointment['id'] : 0 ?>">
+    <form id="clinical-workspace-form" class="clinical-workspace-form" method="post" action="<?= base_url($clinicalEditMode ? 'doctor/clinical/update-completed' : 'doctor/clinical/save') ?>" novalidate data-appointment-id="<?= $selectedAppointment !== null ? (int) $selectedAppointment['id'] : 0 ?>" data-edit-mode="<?= $clinicalEditMode ? '1' : '0' ?>">
         <?= csrf_field() ?>
         <input type="hidden" name="appointment_id" value="<?= $selectedAppointment !== null ? (int) $selectedAppointment['id'] : 0 ?>">
-        <input type="hidden" name="prescription_status" id="clinical-prescription-status" value="<?= esc($prescriptionStatusDefault) ?>">
+        <input type="hidden" name="prescription_status" id="clinical-prescription-status" value="<?= esc($clinicalEditMode && $selectedPrescription !== null ? (string) ($selectedPrescription['status'] ?? $prescriptionStatusDefault) : $prescriptionStatusDefault) ?>">
         <input type="hidden" name="prescription_present" id="clinical-prescription-present" value="<?= $selectedPrescription !== null ? '1' : '0' ?>">
         <div class="clinical-main-grid">
     <aside id="clinical-pane-patient-summary" class="clinical-patient-rail" aria-label="Patient information">
@@ -352,7 +351,7 @@ $clinicalActionContext = [
                         <div><dt><i class="bi bi-phone mr-1" aria-hidden="true"></i>Mobile</dt><dd><?= esc($patientContact($selectedAppointment)) ?></dd></div>
                         <div><dt><i class="bi bi-geo-alt mr-1" aria-hidden="true"></i>Location</dt><dd><?= esc($patientLocation($selectedAppointment)) ?></dd></div>
                         <div><dt><i class="bi bi-calendar2-event mr-1" aria-hidden="true"></i>Appointment</dt><dd><?= esc(trim(($selectedAppointment['appointment_date'] ?? '') . ' ' . ($selectedAppointment['appointment_time'] ?? ''))) ?></dd></div>
-                        <div><dt><i class="bi bi-circle-fill mr-1" aria-hidden="true"></i>Status</dt><dd><span class="badge badge-light"><?= esc(ucwords(str_replace('_', ' ', $selectedAppointment['status']))) ?></span></dd></div>
+                        <div><dt><i class="bi bi-circle-fill mr-1" aria-hidden="true"></i>Status</dt><dd><span class="badge badge-light"><?= esc(ucwords(str_replace('_', ' ', $selectedAppointment['status']))) ?></span></dd></div><?php $fee = $selectedAppointment['fee_summary'] ?? []; ?><div><dt><i class="bi bi-cash-coin mr-1" aria-hidden="true"></i>Consultation Fee</dt><dd><?= esc(number_format((float) ($fee['consultation_fee'] ?? 0), 2)) ?> INR</dd></div><div><dt><i class="bi bi-wallet2 mr-1" aria-hidden="true"></i>Consultation Fee Paid</dt><dd><?= esc(number_format((float) ($fee['paid_amount'] ?? 0), 2)) ?> INR · <?= esc(ucwords(str_replace('_', ' ', (string) ($fee['payment_status'] ?? 'unpaid')))) ?></dd></div>
                     </dl>
                 <?php else: ?>
                     <div class="empty-state py-3" role="status">Select a patient from Today’s OPD.</div>
@@ -391,7 +390,7 @@ $clinicalActionContext = [
                         <div class="form-row">
                             <div class="col-12 mb-3">
                                 <label for="complaint-<?= $appointmentId ?>">Chief complaint</label>
-                                <textarea id="complaint-<?= $appointmentId ?>" class="form-control" name="chief_complaint"><?= esc($selectedAppointment['chief_complaint'] ?? '') ?></textarea>
+                                <textarea id="complaint-<?= $appointmentId ?>" class="form-control" name="chief_complaint" <?= $clinicalReadOnly ? 'disabled' : '' ?>><?= esc($selectedAppointment['chief_complaint'] ?? '') ?></textarea>
                                 <div class="validation-error" id="chief_complaint_<?= $appointmentId ?>Err"></div>
                             </div>
                         </div>
@@ -403,7 +402,7 @@ $clinicalActionContext = [
                         <div class="form-row">
                             <div class="col-12 mb-3">
                                 <label for="diagnosis-<?= $appointmentId ?>">Diagnosis</label>
-                                <textarea id="diagnosis-<?= $appointmentId ?>" class="form-control" name="diagnosis"><?= esc($selectedAppointment['diagnosis'] ?? '') ?></textarea>
+                                <textarea id="diagnosis-<?= $appointmentId ?>" class="form-control" name="diagnosis" <?= $clinicalReadOnly ? 'disabled' : '' ?>><?= esc($selectedAppointment['diagnosis'] ?? '') ?></textarea>
                                 <div class="validation-error" id="diagnosis_<?= $appointmentId ?>Err" data-error-for="diagnosis"></div>
                             </div>
                         </div>
@@ -417,7 +416,7 @@ $clinicalActionContext = [
                         <div class="form-row">
                             <div class="col-12 mb-3">
                                 <label for="treatment-<?= $appointmentId ?>">Advice / treatment plan</label>
-                                <textarea id="treatment-<?= $appointmentId ?>" class="form-control" name="treatment_plan"><?= esc($selectedAppointment['treatment_plan'] ?? '') ?></textarea>
+                                <textarea id="treatment-<?= $appointmentId ?>" class="form-control" name="treatment_plan" <?= $clinicalReadOnly ? 'disabled' : '' ?>><?= esc($selectedAppointment['treatment_plan'] ?? '') ?></textarea>
                                 <div class="validation-error" id="treatment_plan_<?= $appointmentId ?>Err" data-error-for="treatment_plan"></div>
                             </div>
                         </div>
@@ -429,7 +428,7 @@ $clinicalActionContext = [
                         <div class="form-row">
                             <div class="col-12 mb-3">
                                 <label for="diagnostic-tests-<?= $appointmentId ?>">Diagnostic tests</label>
-                                <textarea id="diagnostic-tests-<?= $appointmentId ?>" class="form-control" name="diagnostic_tests"><?= esc($selectedAppointment['diagnostic_tests'] ?? '') ?></textarea>
+                                <textarea id="diagnostic-tests-<?= $appointmentId ?>" class="form-control" name="diagnostic_tests" <?= $clinicalReadOnly ? 'disabled' : '' ?>><?= esc($selectedAppointment['diagnostic_tests'] ?? '') ?></textarea>
                                 <div class="validation-error" id="diagnostic_tests_<?= $appointmentId ?>Err" data-error-for="diagnostic_tests"></div>
                             </div>
                         </div>
@@ -441,7 +440,7 @@ $clinicalActionContext = [
                         <div class="form-row">
                             <div class="col-12 mb-3">
                                 <label for="diet-plan-<?= $appointmentId ?>">Diet plan</label>
-                                <textarea id="diet-plan-<?= $appointmentId ?>" class="form-control" name="diet_plan"><?= esc($selectedAppointment['diet_plan'] ?? '') ?></textarea>
+                                <textarea id="diet-plan-<?= $appointmentId ?>" class="form-control" name="diet_plan" <?= $clinicalReadOnly ? 'disabled' : '' ?>><?= esc($selectedAppointment['diet_plan'] ?? '') ?></textarea>
                                 <div class="validation-error" id="diet_plan_<?= $appointmentId ?>Err" data-error-for="diet_plan"></div>
                             </div>
                         </div>
@@ -453,7 +452,7 @@ $clinicalActionContext = [
                         <div class="form-row">
                             <div class="col-12 mb-3">
                                 <label for="notes-<?= $appointmentId ?>">Consultation notes</label>
-                                <textarea id="notes-<?= $appointmentId ?>" class="form-control" name="clinical_notes"><?= esc($selectedAppointment['clinical_notes'] ?? '') ?></textarea>
+                                <textarea id="notes-<?= $appointmentId ?>" class="form-control" name="clinical_notes" <?= $clinicalReadOnly ? 'disabled' : '' ?>><?= esc($selectedAppointment['clinical_notes'] ?? '') ?></textarea>
                                 <div class="validation-error" id="clinical_notes_<?= $appointmentId ?>Err"></div>
                             </div>
                         </div>
@@ -469,23 +468,27 @@ $clinicalActionContext = [
                 <div class="clinical-prescription-heading">
                     <h2 class="h5 mb-0">Prescription</h2>
                     <div class="clinical-prescription-tools" role="group" aria-label="Prescription tools">
-                        <button id="clinical-create-medicine" class="btn btn-sm btn-light" type="button" data-toggle="modal" data-target="#clinical-medicine-modal" aria-controls="clinical-medicine-modal" aria-label="Create a medicine for the prescription" title="Create a medicine" <?= $selectedAppointment === null || ! $can('prescription.create') || ! $can('medicine.create') ? 'disabled' : '' ?>><i class="bi bi-plus-circle mr-1" aria-hidden="true"></i>+ Medicine</button>
+                        <?php if ($selectedPrescription !== null && $clinicalReadOnly && ! ($prescriptionEditDecision['allowed'] ?? false) && ($prescriptionEditDecision['message'] ?? '') !== ''): ?>
+                        <?php endif; ?>
+                        <button id="clinical-create-medicine" class="btn btn-sm btn-light" type="button" data-toggle="modal" data-target="#clinical-medicine-modal" aria-controls="clinical-medicine-modal" aria-label="Create a medicine for the prescription" title="Create a medicine" <?= $selectedAppointment === null || $clinicalReadOnly || ! $can('prescription.create') || ! $can('medicine.create') ? 'disabled' : '' ?>><i class="bi bi-plus-circle mr-1" aria-hidden="true"></i>+ Medicine</button>
                         <button class="btn btn-sm btn-light" type="button" data-toggle="modal" data-target="#clinical-action-modal" data-clinical-action="past-prescription" aria-controls="clinical-action-modal" <?= $selectedAppointment === null || ! $can('prescription.create') ? 'disabled' : '' ?>><i class="bi bi-clock-history mr-1" aria-hidden="true"></i>Past Prescription</button>
                     </div>
                 </div>
                 <div class="clinical-prescription-duration">
                     <label class="sr-only" for="clinical-medicine-duration">Medicine Duration (Days)</label>
-                    <input id="clinical-medicine-duration" class="form-control" type="number" name="medicine_duration" min="1" max="3650" step="1" inputmode="numeric" placeholder="Medicine Duration (Days)" aria-label="Medicine Duration (Days)" aria-describedby="medicine_durationErr" value="<?= esc((string) ($selectedPrescriptionItems[0]['duration'] ?? '')) ?>" <?= $selectedAppointment === null ? 'disabled' : '' ?>>
+                    <input id="clinical-medicine-duration" class="form-control" type="number" name="medicine_duration" min="1" max="3650" step="1" inputmode="numeric" placeholder="Medicine Duration (Days)" aria-label="Medicine Duration (Days)" aria-describedby="medicine_durationErr" value="<?= esc((string) ($selectedPrescription['medicine_duration'] ?? '')) ?>" <?= $selectedAppointment === null || $clinicalReadOnly ? 'disabled' : '' ?>>
                     <div class="validation-error" id="medicine_durationErr" data-error-for="medicine_duration"></div>
                 </div>
             </div>
             <div class="card-body">
+            <?php if ($clinicalReadOnly): ?><div class="alert alert-info" role="status">Consultation completed. Editing is available from this page only while the consultation remains eligible.</div><?php endif; ?>
             <?php if ($selectedAppointment === null): ?><div class="empty-state p-4" role="status">Select an appointment before creating a prescription.</div>
             <?php elseif (! $can('prescription.create')): ?><div class="alert alert-warning" role="alert">You do not have permission to create prescriptions.</div>
             <?php else: ?>
                 <?php $appointmentId = (int) $selectedAppointment['id']; ?>
                 <?php $prescriptionRows = $selectedPrescriptionItems !== [] ? $selectedPrescriptionItems : [[]]; ?>
                 <div class="prescription-form" data-appointment-id="<?= $appointmentId ?>">
+                <fieldset <?= $clinicalReadOnly ? 'disabled' : '' ?> class="border-0 p-0 m-0">
                 <div class="table-responsive clinical-prescription-table-wrap">
                         <table class="prescription-medicine-table clinical-prescription-table mb-2">
                             <thead>
@@ -531,15 +534,15 @@ $clinicalActionContext = [
                                                 </div>
                                             </div>
                                             <div class="validation-error" id="items_<?= (int) $index ?>_medicine_idErr" data-error-for="items.<?= (int) $index ?>.medicine_id"></div>
+                                            <input type="hidden" name="items[<?= (int) $index ?>][duration_unit]" value="days">
+                                            <input type="hidden" name="items[<?= (int) $index ?>][quantity]" value="<?= esc($quantity) ?>">
                                         </td>
                                         <td data-label="Duration">
                                             <label class="clinical-prescription-field-label" for="clinical-duration-<?= $appointmentId ?>-<?= (int) $index ?>">Duration</label>
-                                            <select id="clinical-duration-<?= $appointmentId ?>-<?= (int) $index ?>" class="form-control btSelect" name="items[<?= (int) $index ?>][duration]" aria-describedby="items_<?= (int) $index ?>_durationErr" title="Select duration">
+                                            <select id="clinical-duration-<?= $appointmentId ?>-<?= (int) $index ?>" class="form-control btSelect" name="items[<?= (int) $index ?>][duration]" aria-describedby="items_<?= (int) $index ?>_durationErr">
                                                 <option value="">Choose...</option>
                                                 <?php foreach ($prescriptionOptionSets['duration'] as $option): ?><option value="<?= (int) $option['id'] ?>" <?= $durationOptionId === (string) $option['id'] ? 'selected' : '' ?>><?= esc($option['name']) ?></option><?php endforeach; ?>
                                             </select>
-                                            <input type="hidden" name="items[<?= (int) $index ?>][duration_unit]" value="days">
-                                            <input type="hidden" name="items[<?= (int) $index ?>][quantity]" value="<?= esc($quantity) ?>">
                                             <div class="validation-error" id="items_<?= (int) $index ?>_durationErr" data-error-for="items.<?= (int) $index ?>.duration"></div>
                                         </td>
                                         <td data-label="Frequency">
@@ -578,20 +581,21 @@ $clinicalActionContext = [
                     </div>
                     <div class="validation-error" id="itemsErr" data-error-for="items"></div>
                     <div class="clinical-prescription-footer" role="group" aria-label="Prescription row actions">
-                        <button class="btn btn-sm btn-primary clinical-add-medicine-trigger" type="button" <?= $selectedAppointment === null || ! $can('prescription.create') ? 'disabled' : '' ?>><i class="bi bi-plus-circle mr-1" aria-hidden="true"></i>Add More</button>
+                        <button class="btn btn-sm btn-primary clinical-add-medicine-trigger" type="button" <?= $selectedAppointment === null || ! $can('prescription.create') || $clinicalReadOnly ? 'disabled' : '' ?>><i class="bi bi-plus-circle mr-1" aria-hidden="true"></i>Add More</button>
                         <span class="clinical-prescription-or" aria-hidden="true">OR Use</span>
-                        <button class="btn btn-sm btn-outline-secondary clinical-add-medicine-trigger" type="button" aria-label="Add medicine using Alt plus N shortcut" title="Add medicine (Alt + N)" <?= $selectedAppointment === null || ! $can('prescription.create') ? 'disabled' : '' ?>>Alt + N</button>
+                        <button class="btn btn-sm btn-outline-secondary clinical-add-medicine-trigger" type="button" aria-label="Add medicine using Alt plus N shortcut" title="Add medicine (Alt + N)" <?= $selectedAppointment === null || ! $can('prescription.create') || $clinicalReadOnly ? 'disabled' : '' ?>>Alt + N</button>
                     </div>
                     <template id="clinical-medicine-row-template">
                         <tr class="clinical-medicine-row" data-row-index="__INDEX__">
-                            <td data-label="Medicine"><div class="clinical-medicine-field"><button class="btn btn-sm btn-outline-danger clinical-remove-medicine" type="button" aria-label="Remove medicine row" title="Remove medicine row"><i class="bi bi-trash" aria-hidden="true"></i><span class="sr-only">Remove</span></button><div class="clinical-medicine-control"><label class="sr-only" for="clinical-medicine-<?= $appointmentId ?>-__INDEX__">Medicine</label><select id="clinical-medicine-<?= $appointmentId ?>-__INDEX__" class="form-control btSelect clinical-medicine-select" name="items[__INDEX__][medicine_id]" data-live-search="true" data-search-url="<?= base_url('doctor/clinical/medicines/search') ?>" data-autofill-url="<?= base_url('doctor/clinical/medicines') ?>" title="Search item..." aria-describedby="items___INDEX___medicine_idErr"><option value="">Search item...</option></select></div></div><div class="validation-error" id="items___INDEX___medicine_idErr" data-error-for="items.__INDEX__.medicine_id"></div></td>
-                            <td data-label="Duration"><label class="sr-only" for="clinical-duration-<?= $appointmentId ?>-__INDEX__">Duration</label><select id="clinical-duration-<?= $appointmentId ?>-__INDEX__" class="form-control btSelect" name="items[__INDEX__][duration]" aria-describedby="items___INDEX___durationErr" title="Select duration"><option value="">Select duration</option><?php foreach ($prescriptionOptionSets['duration'] as $option): ?><option value="<?= (int) $option['id'] ?>"><?= esc($option['name']) ?></option><?php endforeach; ?></select><input type="hidden" name="items[__INDEX__][duration_unit]" value="days"><input type="hidden" name="items[__INDEX__][quantity]" value=""><div class="validation-error" id="items___INDEX___durationErr" data-error-for="items.__INDEX__.duration"></div></td>
+                            <td data-label="Medicine"><div class="clinical-medicine-field"><button class="btn btn-sm btn-outline-danger clinical-remove-medicine" type="button" aria-label="Remove medicine row" title="Remove medicine row"><i class="bi bi-trash" aria-hidden="true"></i><span class="sr-only">Remove</span></button><div class="clinical-medicine-control"><label class="sr-only" for="clinical-medicine-<?= $appointmentId ?>-__INDEX__">Medicine</label><select id="clinical-medicine-<?= $appointmentId ?>-__INDEX__" class="form-control btSelect clinical-medicine-select" name="items[__INDEX__][medicine_id]" data-live-search="true" data-search-url="<?= base_url('doctor/clinical/medicines/search') ?>" data-autofill-url="<?= base_url('doctor/clinical/medicines') ?>" title="Search item..." aria-describedby="items___INDEX___medicine_idErr"><option value="">Search item...</option></select></div></div><div class="validation-error" id="items___INDEX___medicine_idErr" data-error-for="items.__INDEX__.medicine_id"></div><input type="hidden" name="items[__INDEX__][duration_unit]" value="days"><input type="hidden" name="items[__INDEX__][quantity]" value=""></td>
+                            <td data-label="Duration"><label class="sr-only" for="clinical-duration-<?= $appointmentId ?>-__INDEX__">Duration</label><select id="clinical-duration-<?= $appointmentId ?>-__INDEX__" class="form-control btSelect" name="items[__INDEX__][duration]" aria-describedby="items___INDEX___durationErr" title="Select duration"><option value="">Select duration</option><?php foreach ($prescriptionOptionSets['duration'] as $option): ?><option value="<?= (int) $option['id'] ?>"><?= esc($option['name']) ?></option><?php endforeach; ?></select><div class="validation-error" id="items___INDEX___durationErr" data-error-for="items.__INDEX__.duration"></div></td>
                             <td data-label="Frequency"><label class="sr-only" for="clinical-frequency-<?= $appointmentId ?>-__INDEX__">Frequency</label><select id="clinical-frequency-<?= $appointmentId ?>-__INDEX__" class="form-control btSelect" name="items[__INDEX__][frequency]" aria-describedby="items___INDEX___frequencyErr" title="Select frequency"><option value="">Select frequency</option><?php foreach ($prescriptionOptionSets['frequency'] as $option): ?><option value="<?= (int) $option['id'] ?>"><?= esc($option['name']) ?></option><?php endforeach; ?></select><div class="validation-error" id="items___INDEX___frequencyErr" data-error-for="items.__INDEX__.frequency"></div></td>
                             <td data-label="Dose"><label class="sr-only" for="clinical-dose-<?= $appointmentId ?>-__INDEX__">Dose</label><select id="clinical-dose-<?= $appointmentId ?>-__INDEX__" class="form-control btSelect" name="items[__INDEX__][dosage]" aria-describedby="items___INDEX___dosageErr" title="Select dose"><option value="">Select dose</option><?php foreach ($prescriptionOptionSets['dose'] as $option): ?><option value="<?= (int) $option['id'] ?>"><?= esc($option['name']) ?></option><?php endforeach; ?></select><div class="validation-error" id="items___INDEX___dosageErr" data-error-for="items.__INDEX__.dosage"></div></td>
                             <td data-label="Intake"><label class="sr-only" for="clinical-intake-<?= $appointmentId ?>-__INDEX__">Intake</label><select id="clinical-intake-<?= $appointmentId ?>-__INDEX__" class="form-control btSelect" name="items[__INDEX__][intake]" aria-describedby="items___INDEX___intakeErr" title="Select intake"><option value="">Select intake</option><?php foreach ($prescriptionOptionSets['intake'] as $option): ?><option value="<?= (int) $option['id'] ?>" <?= (string) $option['id'] === $defaultIntakeOptionId ? 'selected' : '' ?>><?= esc($option['name']) ?></option><?php endforeach; ?></select><div class="validation-error" id="items___INDEX___intakeErr" data-error-for="items.__INDEX__.intake"></div></td>
                             <td data-label="Note"><label class="sr-only" for="clinical-note-<?= $appointmentId ?>-__INDEX__">Note</label><textarea id="clinical-note-<?= $appointmentId ?>-__INDEX__" class="form-control" name="items[__INDEX__][notes]" maxlength="65535" rows="1" placeholder="Add a note" aria-describedby="items___INDEX___notesErr"></textarea><div class="validation-error" id="items___INDEX___notesErr" data-error-for="items.__INDEX__.notes"></div></td>
                         </tr>
                     </template>
+                    </fieldset>
                 </div>
             <?php endif; ?>
         </div></div>
@@ -602,23 +606,23 @@ $clinicalActionContext = [
         <div class="form-row clinical-compact-row">
             <div class="col-md-3 col-12 mb-2">
                 <label for="follow-up-after-days">Next Follow-up After</label>
-                <input id="follow-up-after-days" class="form-control" type="number" name="follow_up_after_days" min="0" max="65535" step="1" inputmode="numeric" placeholder="Number of days" value="<?= esc($selectedAppointment['follow_up_after_days'] ?? '') ?>" data-appointment-base-date="<?= esc((string) ($selectedAppointment['appointment_date'] ?? date('Y-m-d'))) ?>" <?= $selectedAppointment === null ? 'disabled' : '' ?> aria-describedby="follow_up_after_daysErr">
+                        <input id="follow-up-after-days" class="form-control" type="number" name="follow_up_after_days" min="0" max="65535" step="1" inputmode="numeric" placeholder="Number of days" value="<?= esc($selectedAppointment['follow_up_after_days'] ?? '') ?>" data-appointment-base-date="<?= esc((string) ($selectedAppointment['appointment_date'] ?? date('Y-m-d'))) ?>" <?= $selectedAppointment === null || $clinicalReadOnly ? 'disabled' : '' ?> aria-describedby="follow_up_after_daysErr">
                 <div class="validation-error" id="follow_up_after_daysErr" data-error-for="follow_up_after_days"></div>
             </div>
             <div class="col-md-3 col-12 mb-2">
                 <label for="follow-up-date">Expected Follow-up Date</label>
-                <input id="follow-up-date" class="form-control datepicker" type="text" name="follow_up_date" placeholder="dd-mm-yyyy" autocomplete="off" data-submit-display-date="true" value="<?= esc($displayDate($selectedAppointment['follow_up_date'] ?? '')) ?>" <?= $selectedAppointment === null ? 'disabled' : '' ?> aria-describedby="follow_up_dateErr">
+                        <input id="follow-up-date" class="form-control datepicker" type="text" name="follow_up_date" placeholder="dd-mm-yyyy" autocomplete="off" data-submit-display-date="true" value="<?= esc($displayDate($selectedAppointment['follow_up_date'] ?? '')) ?>" <?= $selectedAppointment === null || $clinicalReadOnly ? 'disabled' : '' ?> aria-describedby="follow_up_dateErr">
                 <div class="validation-error" id="follow_up_dateErr" data-error-for="follow_up_date"></div>
             </div>
             <div class="col-md-3 col-12 mb-2">
                 <label for="follow-up-time">Expected Follow-up Time</label>
-                <input id="follow-up-time" class="form-control" type="time" name="follow_up_time" value="<?= esc($displayTime($selectedAppointment['follow_up_time'] ?? '')) ?>" <?= $selectedAppointment === null ? 'disabled' : '' ?> aria-describedby="follow_up_timeErr">
+                        <input id="follow-up-time" class="form-control" type="time" name="follow_up_time" value="<?= esc($displayTime($selectedAppointment['follow_up_time'] ?? '')) ?>" <?= $selectedAppointment === null || $clinicalReadOnly ? 'disabled' : '' ?> aria-describedby="follow_up_timeErr">
                 <div class="validation-error" id="follow_up_timeErr" data-error-for="follow_up_time"></div>
             </div>
             <div class="col-md-3 col-12 mb-2">
                 <label for="follow-up-type">Follow-up Type</label>
                 <?php $followUpTypeId = (int) ($selectedAppointment['follow_up_type_id'] ?? 0); ?>
-                <select id="follow-up-type" class="form-control btSelect" name="follow_up_type_id" <?= $selectedAppointment === null ? 'disabled' : '' ?> aria-describedby="follow_up_type_idErr" title="Select follow-up type">
+                        <select id="follow-up-type" class="form-control btSelect" name="follow_up_type_id" <?= $selectedAppointment === null || $clinicalReadOnly ? 'disabled' : '' ?> aria-describedby="follow_up_type_idErr" title="Select follow-up type">
                     <option value="">Select type</option>
                     <?php foreach ($followUpTypes as $type): ?>
                         <option value="<?= (int) ($type['id'] ?? 0) ?>" <?= $followUpTypeId === (int) ($type['id'] ?? 0) ? 'selected' : '' ?>><?= esc($type['name'] ?? '') ?></option>
@@ -628,7 +632,7 @@ $clinicalActionContext = [
             </div>
             <div class="col-12 mb-2">
                 <label for="follow-up-remarks">Follow-up Remarks</label>
-                <textarea id="follow-up-remarks" class="form-control" name="follow_up_remarks" rows="2" <?= $selectedAppointment === null ? 'disabled' : '' ?> aria-describedby="follow_up_remarksErr"><?= esc($selectedAppointment['follow_up_remarks'] ?? '') ?></textarea>
+                        <textarea id="follow-up-remarks" class="form-control" name="follow_up_remarks" rows="2" <?= $selectedAppointment === null || $clinicalReadOnly ? 'disabled' : '' ?> aria-describedby="follow_up_remarksErr"><?= esc($selectedAppointment['follow_up_remarks'] ?? '') ?></textarea>
                 <div class="validation-error" id="follow_up_remarksErr" data-error-for="follow_up_remarks"></div>
             </div>
         </div>
@@ -639,23 +643,23 @@ $clinicalActionContext = [
         <div class="form-row clinical-compact-row">
             <div class="col-md-3 col-12 mb-2">
                 <label for="next-appointment-after-days">Next Appointment After</label>
-                <input id="next-appointment-after-days" class="form-control" type="number" name="next_appointment_after_days" min="0" max="65535" step="1" inputmode="numeric" placeholder="Number of days" value="<?= esc($selectedAppointment['next_appointment_after_days'] ?? '') ?>" data-appointment-base-date="<?= esc((string) ($selectedAppointment['appointment_date'] ?? date('Y-m-d'))) ?>" <?= $selectedAppointment === null ? 'disabled' : '' ?> aria-describedby="next_appointment_after_daysErr">
+                        <input id="next-appointment-after-days" class="form-control" type="number" name="next_appointment_after_days" min="0" max="65535" step="1" inputmode="numeric" placeholder="Number of days" value="<?= esc($selectedAppointment['next_appointment_after_days'] ?? '') ?>" data-appointment-base-date="<?= esc((string) ($selectedAppointment['appointment_date'] ?? date('Y-m-d'))) ?>" <?= $selectedAppointment === null || $clinicalReadOnly ? 'disabled' : '' ?> aria-describedby="next_appointment_after_daysErr">
                 <div class="validation-error" id="next_appointment_after_daysErr" data-error-for="next_appointment_after_days"></div>
             </div>
             <div class="col-md-3 col-12 mb-2">
                 <label for="next-appointment-date">Next Appointment Date</label>
-                <input id="next-appointment-date" class="form-control datepicker" type="text" name="next_appointment_date" placeholder="dd-mm-yyyy" autocomplete="off" data-submit-display-date="true" value="<?= esc($displayDate($selectedAppointment['next_appointment_date'] ?? '')) ?>" <?= $selectedAppointment === null ? 'disabled' : '' ?> aria-describedby="next_appointment_dateErr">
+                        <input id="next-appointment-date" class="form-control datepicker" type="text" name="next_appointment_date" placeholder="dd-mm-yyyy" autocomplete="off" data-submit-display-date="true" value="<?= esc($displayDate($selectedAppointment['next_appointment_date'] ?? '')) ?>" <?= $selectedAppointment === null || $clinicalReadOnly ? 'disabled' : '' ?> aria-describedby="next_appointment_dateErr">
                 <div class="validation-error" id="next_appointment_dateErr" data-error-for="next_appointment_date"></div>
             </div>
             <div class="col-md-3 col-12 mb-2">
                 <label for="next-appointment-time">Next Appointment Time</label>
-                <input id="next-appointment-time" class="form-control" type="time" name="next_appointment_time" value="<?= esc($displayTime($selectedAppointment['next_appointment_time'] ?? '')) ?>" <?= $selectedAppointment === null ? 'disabled' : '' ?> aria-describedby="next_appointment_timeErr">
+                        <input id="next-appointment-time" class="form-control" type="time" name="next_appointment_time" value="<?= esc($displayTime($selectedAppointment['next_appointment_time'] ?? '')) ?>" <?= $selectedAppointment === null || $clinicalReadOnly ? 'disabled' : '' ?> aria-describedby="next_appointment_timeErr">
                 <div class="validation-error" id="next_appointment_timeErr" data-error-for="next_appointment_time"></div>
             </div>
             <div class="col-md-3 col-12 mb-2">
                 <label for="next-appointment-type">Appointment Type</label>
                 <?php $nextAppointmentType = (string) ($selectedAppointment['next_appointment_type'] ?? ''); ?>
-                <select id="next-appointment-type" class="form-control" name="next_appointment_type" <?= $selectedAppointment === null ? 'disabled' : '' ?> aria-describedby="next_appointment_typeErr">
+                        <select id="next-appointment-type" class="form-control" name="next_appointment_type" <?= $selectedAppointment === null || $clinicalReadOnly ? 'disabled' : '' ?> aria-describedby="next_appointment_typeErr">
                     <option value="">Select type</option>
                     <?php foreach (['in_person' => 'In person', 'video' => 'Video'] as $value => $label): ?>
                         <option value="<?= esc($value) ?>" <?= $nextAppointmentType === $value ? 'selected' : '' ?>><?= esc($label) ?></option>
@@ -674,18 +678,68 @@ $clinicalActionContext = [
     <div class="clinical-common-actions sticky-bottom" role="group" aria-label="Consultation actions">
         <div class="clinical-save-mode">
             <label class="sr-only" for="clinical-consultation-status">Save consultation as</label>
-            <select id="clinical-consultation-status" class="form-control form-control-sm" name="consultation_status" <?= $selectedAppointment === null ? 'disabled' : '' ?> aria-label="Save consultation as">
+            <select id="clinical-consultation-status" class="form-control form-control-sm" name="consultation_status" <?= $selectedAppointment === null || $clinicalReadOnly ? 'disabled' : '' ?> aria-label="Save consultation as">
                 <option value="draft">Draft</option>
-                <option value="completed">Completed</option>
+                <option value="completed" <?= $clinicalCompleted ? 'selected' : '' ?>>Completed</option>
             </select>
         </div>
-        <button class="btn btn-light clinical-cancel" type="button" <?= $selectedAppointment === null ? 'disabled' : '' ?>>Cancel</button>
-        <button id="clinical-save-workspace" class="btn btn-primary" type="submit" <?= $selectedAppointment === null ? 'disabled' : '' ?>><i class="bi bi-save mr-1" aria-hidden="true"></i>Save Consultation</button>
+        <?php if ($clinicalEditMode): ?>
+            <a class="btn btn-light clinical-cancel" href="<?= base_url('doctor/clinical?appointment_id=' . (int) $selectedAppointment['id'] . '&patient_id=' . (int) $selectedAppointment['patient_id'] . '#patient-summary') ?>">Cancel</a>
+            <button id="clinical-save-workspace" class="btn btn-primary" type="submit"><i class="bi bi-save mr-1" aria-hidden="true"></i>Save Changes</button>
+        <?php else: ?>
+            <?php if ($selectedPrescription !== null && $can('consultation.edit') && ($prescriptionEditDecision['allowed'] ?? false)): ?>
+                <a class="btn btn-primary clinical-edit-consultation-action" href="<?= base_url('doctor/clinical?appointment_id=' . (int) $selectedAppointment['id'] . '&patient_id=' . (int) $selectedAppointment['patient_id'] . '&edit=1#patient-summary') ?>" title="Edit Consultation &amp; Prescription" aria-label="Edit Consultation &amp; Prescription"><i class="bi bi-pencil-square mr-1" aria-hidden="true"></i>Edit Consultation &amp; Prescription</a>
+            <?php endif; ?>
+            <button class="btn btn-light clinical-cancel" type="button" <?= $selectedAppointment === null || $clinicalReadOnly ? 'disabled' : '' ?>>Cancel</button>
+            <button id="clinical-save-workspace" class="btn btn-primary" type="submit" <?= $selectedAppointment === null || $clinicalReadOnly ? 'disabled' : '' ?>><i class="bi bi-save mr-1" aria-hidden="true"></i>Save Consultation</button>
+        <?php endif; ?>
     </div>
     </form>
     </div>
     <?php endif; ?>
 </main>
+<?= view('parts/consultation_fee_modal', ['canCollectFee' => $can('billing.edit'), 'feeEndpoint' => base_url('doctor/appointments/collect-fee')]) ?>
+<script>
+window.addEventListener('load', function () {
+    if (!window.jQuery || window.ushaDermaClinicalOpdBound) return;
+    window.ushaDermaClinicalOpdBound = true;
+    var $ = window.jQuery;
+    var modal = $('#clinical-opd-queue-modal');
+    var search = $('#clinical-opd-search');
+    var results = $('#clinical-opd-results');
+    var request = null;
+    var timer = null;
+    function status(message, loading) {
+        results.empty().append($('<div>', {class: 'list-group-item text-muted', role: 'status', text: message}));
+        if (loading) results.find('[role="status"]').prepend($('<span>', {class: 'spinner-border spinner-border-sm mr-2', 'aria-hidden': 'true'}));
+    }
+    function render(items) {
+        results.empty();
+        if (!items.length) { status('No appointments found in your clinic scope.', false); return; }
+        var table = $('<table>', {class: 'table table-sm mb-0 clinical-opd-table', 'aria-label': 'Today’s OPD appointments'});
+        $('<thead>').append($('<tr>').append('<th scope="col">Patient</th><th scope="col">Appointment</th><th scope="col">Action</th>')).appendTo(table);
+        var body = $('<tbody>').appendTo(table);
+        items.forEach(function (item) {
+            var name = item.patient_name || 'Patient';
+            var row = $('<tr>', {class: 'clinical-opd-result'}).appendTo(body);
+            $('<td>', {class: 'clinical-opd-queue-cell', 'data-label': 'Patient'}).append($('<strong>', {class: 'd-block', text: name}), $('<span>', {class: 'small text-muted d-block', text: (item.registration_number || 'Patient') + ' · ' + (item.mobile || 'Mobile not recorded')}), $('<span>', {class: 'small text-muted d-block', text: 'Age: ' + (item.age == null ? 'Not recorded' : item.age + ' years')})).appendTo(row);
+            $('<td>', {class: 'clinical-opd-queue-cell', 'data-label': 'Appointment'}).append($('<strong>', {class: 'd-block', text: item.appointment_number || 'Appointment'}), $('<span>', {class: 'small text-muted d-block', text: (item.appointment_date || '') + ' · ' + (item.appointment_time || '')}), $('<span>', {class: 'badge badge-light', text: String(item.status || 'unknown').replace(/_/g, ' ')})).appendTo(row);
+            var action = $('<td>', {class: 'clinical-opd-queue-cell clinical-opd-action-cell', 'data-label': 'Action'}).appendTo(row);
+            $('<a>', {class: 'btn btn-sm btn-outline-primary', href: '<?= base_url('doctor/clinical') ?>?appointment_id=' + encodeURIComponent(item.id) + '&patient_id=' + encodeURIComponent(item.patient_id), text: 'Consult', 'aria-label': 'Consult ' + name}).appendTo(action);
+        });
+        $('<div>', {class: 'table-responsive clinical-opd-table-wrap'}).append(table).appendTo(results);
+    }
+    function load() {
+        if (request && request.readyState !== 4) request.abort();
+        status('Loading today’s appointments…', true);
+        request = $.ajax({url: '<?= base_url('doctor/clinical/appointments/search') ?>', method: 'GET', dataType: 'json', data: {q: String(search.val() || '').trim(), page: 1, page_size: 20}, headers: {'X-Requested-With': 'XMLHttpRequest'}})
+            .done(function (response) { if (response.status) render(response.data && response.data.items ? response.data.items : []); else status(response.msg || 'Appointments could not be loaded.', false); })
+            .fail(function (xhr, textStatus) { if (textStatus !== 'abort') status((xhr.responseJSON || {}).msg || 'Today’s queue is unavailable. Try again.', false); });
+    }
+    modal.on('shown.bs.modal.doctorClinicalOpdFallback', load);
+    search.on('input.doctorClinicalOpdFallback', function () { window.clearTimeout(timer); timer = window.setTimeout(load, 280); });
+});
+</script>
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
@@ -704,7 +758,7 @@ $(function () {
         appointmentId: Number(clinicalMain.data('selected-appointment-id') || 0),
         patientId: Number(clinicalMain.data('selected-patient-id') || 0),
     };
-    window.rootinsClinicalSelection = clinicalSelection;
+    window.ushaDermaClinicalSelection = clinicalSelection;
 
     function hideClinicalPatientContent() {
         $('#clinical-patient-specific-content').attr('hidden', true);
@@ -714,7 +768,7 @@ $(function () {
     function clearClinicalSelection() {
         clinicalSelection.appointmentId = 0;
         clinicalSelection.patientId = 0;
-        window.rootinsClinicalSelection = clinicalSelection;
+        window.ushaDermaClinicalSelection = clinicalSelection;
         hideClinicalPatientContent();
         $('#clinical-feedback').text('No appointment selected.');
     }
@@ -732,7 +786,7 @@ $(function () {
         }
         clinicalSelection.appointmentId = 0;
         clinicalSelection.patientId = 0;
-        window.rootinsClinicalSelection = clinicalSelection;
+        window.ushaDermaClinicalSelection = clinicalSelection;
         hideClinicalPatientContent();
         const button = $('.opd-select-appointment[data-id="' + appointmentId + '"]').first();
         if (button.length) {
@@ -773,7 +827,7 @@ $(function () {
                 }
                 clinicalSelection.appointmentId = appointmentId;
                 clinicalSelection.patientId = patientId;
-                window.rootinsClinicalSelection = clinicalSelection;
+                window.ushaDermaClinicalSelection = clinicalSelection;
                 $('#clinical-feedback').text('Appointment selected. Opening the Clinical Workspace…');
                 window.setTimeout(function () {
                     $('#clinical-opd-queue-modal').modal('hide');
@@ -896,7 +950,7 @@ $(function () {
         }
 
         clinicalActionTitle.text(action === 'past-prescription' ? 'Past Prescription' : 'Print Prescription');
-        const printArea = $('<div>', {class: 'clinical-action-print-area rootins-print-document'});
+        const printArea = $('<div>', {class: 'clinical-action-print-area usha-derma-print-document'});
         const clinicHeader = $('<div>', {class: 'clinical-action-prescription-clinic'});
         if (context.clinic_logo_url) {
             $('<img>', {class: 'clinical-action-prescription-clinic-logo', src: context.clinic_logo_url, alt: clinicalActionValue(context.clinic_name, 'Clinic logo')}).appendTo(clinicHeader);
@@ -937,35 +991,47 @@ $(function () {
         patientMeta.appendTo(patientCard);
         patientCard.appendTo(printArea);
 
-        const durations = (prescription.items || []).map(function (item) {
-            return [item.duration, item.duration_unit].filter(Boolean).join(' ');
-        }).filter(Boolean);
-        $('<h3>', {class: 'clinical-action-prescription-title', text: 'Prescribed Medicines' + (durations.length ? ' (for ' + durations[0] + ')' : '')}).appendTo(printArea);
+        const formatPrescriptionDuration = function (item) {
+            const value = String(item.duration || '').trim();
+            const unit = String(item.duration_unit || '').trim();
+            if (!value) return unit;
+            if (!unit || !/^\d+(?:\.\d+)?$/.test(value)) return [value, unit].filter(Boolean).join(' ');
+            const number = Number(value);
+            const singular = unit.toLowerCase().replace(/s$/, '');
+            const label = number === 1 ? singular : (['day', 'week', 'month'].indexOf(singular) !== -1 ? singular + 's' : unit);
+            return value + ' ' + label;
+        };
+        const commonDuration = String(prescription.medicine_duration || '').trim();
+        const durationSummary = commonDuration ? formatPrescriptionDuration({medicine_duration: commonDuration, duration_unit: 'days'}) : '';
+        if (durationSummary) {
+            $('<h3>', {class: 'clinical-action-prescription-title', text: 'Prescription Summary'}).appendTo(printArea);
+            $('<div>', {class: 'clinical-action-prescription-summary', text: 'Duration Days: ' + durationSummary}).appendTo(printArea);
+        }
+        $('<h3>', {class: 'clinical-action-prescription-title', text: 'Prescribed Medicines'}).appendTo(printArea);
         const table = $('<table>', {class: 'table table-bordered table-sm clinical-action-prescription-table'});
         $('<caption>', {class: 'sr-only', text: 'Prescription medicine items'}).appendTo(table);
-        $('<thead><tr><th scope="col">#</th><th scope="col">Medicine</th><th scope="col">Duration</th><th scope="col">Frequency</th><th scope="col">Dose</th><th scope="col">Intake</th><th scope="col">Note</th></tr></thead>').appendTo(table);
+        $('<thead><tr><th scope="col">Medicine</th><th scope="col">Duration</th><th scope="col">Frequency</th><th scope="col">Dose</th><th scope="col">Intake</th><th scope="col">Note</th></tr></thead>').appendTo(table);
         const tableBody = $('<tbody>').appendTo(table);
         if (!prescription.items || !prescription.items.length) {
-            $('<tr><td colspan="7" class="text-muted">No medicine items recorded.</td></tr>').appendTo(tableBody);
+            $('<tr><td colspan="6" class="text-muted">No medicine items recorded.</td></tr>').appendTo(tableBody);
         } else {
             prescription.items.forEach(function (item, index) {
                 const row = $('<tr>');
                 [
-                    index + 1,
                     clinicalActionValue(item.medicine_name),
-                    [item.duration, item.duration_unit].filter(Boolean).join(' ') || '—',
+                    (function () { const value = String(item.duration || commonDuration).trim(); return value ? formatPrescriptionDuration({medicine_duration: value, duration_unit: 'days'}) : ''; }()),
                     clinicalActionValue(item.frequency, '—'),
                     clinicalActionValue(item.dosage, '—'),
                     clinicalActionValue(item.instructions, '—'),
                     clinicalActionValue(item.notes, '—'),
                 ].forEach(function (value, columnIndex) {
-                    const cell = $('<td>', {text: String(value)}).attr('data-label', ['#', 'Medicine', 'Duration', 'Frequency', 'Dose', 'Intake', 'Note'][columnIndex]);
+                    const cell = $('<td>', {text: String(value)}).attr('data-label', ['Medicine', 'Duration', 'Frequency', 'Dose', 'Intake', 'Note'][columnIndex]);
                     cell.appendTo(row);
                 });
                 row.appendTo(tableBody);
             });
         }
-        table.appendTo(printArea);
+        $('<div>', {class: 'table-responsive clinical-action-prescription-table-wrap'}).append(table).appendTo(printArea);
         if (String(context.clinic_mobile || '').trim() !== '') {
             const clinicFooter = $('<footer>', {class: 'clinical-action-prescription-footer'});
             $('<span>', {text: 'Clinic contact'}).appendTo(clinicFooter);
@@ -1051,10 +1117,13 @@ $(function () {
         if (prescription === null) {
             html += panel('Prescription', 'No prescription recorded for this visit.');
         } else {
-            const prescriptionTitle = 'Prescription' + (prescription.duration ? ' (For ' + clinicalPastText(prescription.duration) + ' Days)' : '');
+            const prescriptionTitle = 'Prescription';
             let prescriptionHtml = '<section class="clinical-past-visit-reference-panel"><h4>' + prescriptionTitle + '</h4><div class="small text-muted mb-2">' + clinicalPastText([prescription.number, prescription.date, prescription.status ? String(prescription.status).replace(/_/g, ' ') : ''].filter(Boolean).join(' · '), 'Prescription details') + '</div>';
             if (Array.isArray(prescription.items) && prescription.items.length) {
-                prescriptionHtml += '<div class="table-responsive clinical-past-visit-prescription-table"><table class="table table-sm mb-0"><caption class="sr-only">Prescription medicines</caption><thead><tr><th scope="col">Medicine</th><th scope="col">Duration</th><th scope="col">Frequency</th><th scope="col">Dose</th><th scope="col">Intake</th><th scope="col">Notes</th></tr></thead><tbody>' + prescription.items.map(function (item) { return '<tr><td>' + clinicalPastText(item.medicine_name, '—') + '</td><td>' + clinicalPastText(item.duration, '—') + '</td><td>' + clinicalPastText(item.frequency, '—') + '</td><td>' + clinicalPastText(item.dosage, '—') + '</td><td>' + clinicalPastText(item.instructions, '—') + '</td><td>' + clinicalPastText(item.notes, '—') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+                const commonPastDuration = String(prescription.medicine_duration || '').trim();
+                const pastDurationSummary = commonPastDuration ? commonPastDuration + (commonPastDuration === '1' ? ' day' : ' days') : '';
+                const pastSummary = pastDurationSummary ? '<div class="clinical-past-visit-prescription-summary"><strong>Prescription Summary</strong><span>Duration Days: ' + clinicalPastText(pastDurationSummary) + '</span></div>' : '';
+                prescriptionHtml += pastSummary + '<div class="table-responsive clinical-past-visit-prescription-table"><table class="table table-sm mb-0"><caption class="sr-only">Prescription medicines</caption><thead><tr><th scope="col">Medicine</th><th scope="col">Duration</th><th scope="col">Frequency</th><th scope="col">Dose</th><th scope="col">Intake</th><th scope="col">Notes</th></tr></thead><tbody>' + prescription.items.map(function (item) { var itemDuration = String(item.duration || commonPastDuration).trim(); var durationLabel = itemDuration ? itemDuration + (itemDuration === '1' ? ' day' : ' days') : ''; return '<tr><td>' + clinicalPastText(item.medicine_name, '—') + '</td><td>' + clinicalPastText(durationLabel) + '</td><td>' + clinicalPastText(item.frequency, '—') + '</td><td>' + clinicalPastText(item.dosage, '—') + '</td><td>' + clinicalPastText(item.instructions, '—') + '</td><td>' + clinicalPastText(item.notes, '—') + '</td></tr>'; }).join('') + '</tbody></table></div>';
             } else {
                 prescriptionHtml += '<div class="clinical-past-visit-reference-value is-empty">No medicines recorded for this visit.</div>';
             }
@@ -1220,11 +1289,13 @@ $(function () {
             const patientCell = $('<td>', {class: 'clinical-opd-queue-cell', 'data-label': 'Patient'}).appendTo(row);
             $('<strong>', {class: 'd-block clinical-opd-truncate', text: item.patient_name || 'Patient', title: item.patient_name || 'Patient'}).appendTo(patientCell);
             $('<span>', {class: 'small text-muted d-block', text: 'Patient no: ' + patientNumber, title: 'Patient number ' + patientNumber}).appendTo(patientCell);
+            $('<span>', {class: 'small text-muted d-block', text: 'Age: ' + (item.age === null || item.age === undefined ? 'Not recorded' : item.age + ' years')}).appendTo(patientCell);
             $('<span>', {class: 'small text-muted d-block clinical-opd-truncate', text: 'Mobile: ' + (item.mobile || 'Not recorded'), title: item.mobile || 'Mobile not recorded'}).appendTo(patientCell);
             const appointmentCell = $('<td>', {class: 'clinical-opd-queue-cell', 'data-label': 'Appointment'}).appendTo(row);
             $('<strong>', {class: 'd-block clinical-opd-truncate', text: typeLabel, title: typeLabel, 'aria-label': typeLabel}).appendTo(appointmentCell);
             $('<span>', {class: 'small text-muted d-block', text: queueLabel}).appendTo(appointmentCell);
             $('<span>', {class: 'badge badge-light clinical-opd-status', text: statusLabel, title: 'Appointment status: ' + statusLabel, 'aria-label': 'Appointment status: ' + statusLabel}).appendTo(appointmentCell);
+            $('<span>', {class: 'small text-muted d-block', text: 'Fee paid: ' + Number(item.paid_amount || 0).toFixed(2) + ' INR · ' + String(item.payment_status || 'unpaid').replace(/_/g, ' ')}).appendTo(appointmentCell);
             const actionCell = $('<td>', {class: 'clinical-opd-queue-cell clinical-opd-action-cell', 'data-label': 'Action'}).append(
                 $('<button>', {
                     type: 'button',
@@ -1265,6 +1336,9 @@ $(function () {
             }
             if (<?= $can('prescription.view') ? 'true' : 'false' ?> && Number(item.prescription_id || 0) > 0) {
                 appendQueueAction('bi bi-file-medical', 'View Prescription', '<?= base_url('doctor/prescriptions') ?>?prescription_id=' + encodeURIComponent(item.prescription_id), 'View prescription details');
+            }
+            if (item.can_collect_fee) {
+                $('<button>', {class: 'dropdown-item js-consultation-fee', type: 'button', 'data-appointment-id': item.id, 'data-appointment-number': item.appointment_number, 'data-amount': Number(item.consultation_fee || 0) - Number(item.paid_amount || 0), 'aria-label': 'Collect consultation fee for ' + (item.patient_name || 'patient')}).append($('<i>', {class: 'bi bi-cash-coin mr-2', 'aria-hidden': 'true'})).append(document.createTextNode('Collect Consultation Fee')).appendTo(menu);
             }
             if (menu.children().length) {
                 actionMenu.appendTo(actionCell);
@@ -1807,13 +1881,16 @@ $(function () {
         $('#clinical-prescription-present').val(nonEmptyPrescriptionRows.length ? '1' : '0');
         button.prop('disabled', true).attr('aria-busy', 'true');
         ajaxRequest({
-            url: '<?= base_url('doctor/clinical/save') ?>',
+            url: '<?= base_url($clinicalEditMode ? 'doctor/clinical/update-completed' : 'doctor/clinical/save') ?>',
             method: 'POST',
             data: form.serialize(),
             success: function (response) {
                 if (response.status) {
                     $('#clinical-feedback').text(response.msg);
                     showSuccess(response.msg);
+                    <?php if ($clinicalEditMode): ?>
+                    window.location.href = '<?= base_url('doctor/clinical?appointment_id=' . (int) $selectedAppointment['id'] . '&patient_id=' . (int) $selectedAppointment['patient_id'] . '#patient-summary') ?>';
+                    <?php endif; ?>
                     return;
                 }
                 bindWorkspaceErrors(form, response.errors || {});

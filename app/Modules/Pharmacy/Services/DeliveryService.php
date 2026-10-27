@@ -68,13 +68,13 @@ final class DeliveryService
         if ($clinicId === null || $orderId <= 0) {
             return null;
         }
-        $row = db_connect()->table('medicine_orders AS orders')->select('orders.*, providers.provider_name, providers.tracking_url_template, clinics.clinic_name, prescriptions.prescription_number, prescriptions.prescription_date, prescriptions.clinic_id AS prescription_clinic_id, patients.registration_number, patients.first_name, patients.middle_name, patients.last_name, patients.mobile_number, patients.country_code, patients.address')->join('clinics', 'clinics.id = orders.clinic_id')->join('patients', 'patients.id = orders.patient_id')->join('prescriptions', 'prescriptions.id = orders.prescription_id')->join('delivery_providers providers', 'providers.id = orders.delivery_provider_id', 'left')->where('orders.id', $orderId)->where('orders.clinic_id', $clinicId)->where('patients.clinic_id', $clinicId)->where('prescriptions.clinic_id', $clinicId)->get()->getRowArray();
+        $row = db_connect()->table('medicine_orders AS orders')->select('orders.*, providers.provider_name, providers.tracking_url_template, clinics.clinic_name, prescriptions.prescription_number, prescriptions.prescription_date, prescriptions.medicine_duration, prescriptions.clinic_id AS prescription_clinic_id, patients.registration_number, patients.first_name, patients.middle_name, patients.last_name, patients.mobile_number, patients.country_code, patients.address')->join('clinics', 'clinics.id = orders.clinic_id')->join('patients', 'patients.id = orders.patient_id')->join('prescriptions', 'prescriptions.id = orders.prescription_id')->join('delivery_providers providers', 'providers.id = orders.delivery_provider_id', 'left')->where('orders.id', $orderId)->where('orders.clinic_id', $clinicId)->where('patients.clinic_id', $clinicId)->where('prescriptions.clinic_id', $clinicId)->get()->getRowArray();
 
         if ($row === null) {
             return null;
         }
         $result = $this->normalize($row);
-        $result['items'] = db_connect()->table('medicine_order_items')->where('order_id', $orderId)->orderBy('id', 'ASC')->get()->getResultArray();
+        $result['items'] = db_connect()->table('medicine_order_items AS order_items')->select('order_items.*, COALESCE(prescription_items.duration, order_items.duration) AS medicine_duration', false)->join('prescription_items', 'prescription_items.id = order_items.prescription_item_id', 'left')->where('order_items.order_id', $orderId)->orderBy('order_items.id', 'ASC')->get()->getResultArray();
 
         return $result;
     }

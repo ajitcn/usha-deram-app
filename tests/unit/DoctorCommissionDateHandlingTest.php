@@ -14,21 +14,21 @@ final class DoctorCommissionDateHandlingTest extends CIUnitTestCase
 
     public function testUserFacingDateNormalizesToIsoForCommissionStorage(): void
     {
-        self::assertSame('2026-02-28', rootins_parse_date('28-02-2026', false));
-        self::assertSame('28-02-2026', rootins_format_date('2026-02-28'));
+        self::assertSame('2026-02-28', usha_derma_parse_date('28-02-2026', false));
+        self::assertSame('28-02-2026', usha_derma_format_date('2026-02-28'));
     }
 
     public function testLeapYearAndInvalidDatesAreHandledExactly(): void
     {
-        self::assertSame('2024-02-29', rootins_parse_date('29-02-2024', false));
-        self::assertNull(rootins_parse_date('29-02-2025', false));
-        self::assertNull(rootins_parse_date('31-04-2026', false));
+        self::assertSame('2024-02-29', usha_derma_parse_date('29-02-2024', false));
+        self::assertNull(usha_derma_parse_date('29-02-2025', false));
+        self::assertNull(usha_derma_parse_date('31-04-2026', false));
     }
 
     public function testEmptyOptionalDateRemainsEmptyAtBoundary(): void
     {
-        self::assertNull(rootins_parse_date('', false));
-        self::assertSame('', rootins_format_date(null));
+        self::assertNull(usha_derma_parse_date('', false));
+        self::assertSame('', usha_derma_format_date(null));
     }
 
     public function testCommissionControllerValidatesDisplayValueBeforeNormalizing(): void
@@ -37,7 +37,7 @@ final class DoctorCommissionDateHandlingTest extends CIUnitTestCase
 
         self::assertStringContainsString("'effective_from' => trim((string) \$this->request->getPost('effective_from'))", $controller);
         self::assertStringNotContainsString("'effective_from' => getYMD(", $controller);
-        self::assertStringContainsString('$effectiveFrom = rootins_parse_date($data[\'effective_from\'], false);', $controller);
+        self::assertStringContainsString('$effectiveFrom = usha_derma_parse_date($data[\'effective_from\'], false);', $controller);
         self::assertStringContainsString('$data = $validation[\'data\'];', $controller);
         self::assertStringContainsString('$data[\'effective_from\'] = $effectiveFrom;', $controller);
         self::assertStringContainsString('$commission[\'effective_from\'] = _dateOnly($commission[\'effective_from\']);', $controller);

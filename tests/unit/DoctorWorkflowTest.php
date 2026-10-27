@@ -1017,7 +1017,7 @@ final class DoctorWorkflowTest extends TestCase
         self::assertStringContainsString('<?php if ($selectedAppointment !== null): ?>', $view);
         self::assertStringContainsString('id="clinical-patient-specific-content"', $view);
         self::assertStringContainsString('data-clinical-patient-specific', $view);
-        self::assertStringContainsString('window.rootinsClinicalSelection', $view);
+        self::assertStringContainsString('window.ushaDermaClinicalSelection', $view);
         self::assertStringContainsString('function clearClinicalSelection', $view);
         self::assertStringContainsString('function selectClinicalAppointment', $view);
         self::assertStringContainsString("$('#clinical-opd-queue-modal').modal('hide')", $view);
@@ -1514,10 +1514,10 @@ final class DoctorWorkflowTest extends TestCase
         $prescriptions = file_get_contents(ROOTPATH . 'app/Modules/Doctor/Views/pages/prescriptions.php');
         $prescriptions .= file_get_contents(ROOTPATH . 'app/Modules/Doctor/Views/pages/prescriptions_actions.php');
 
-        self::assertStringContainsString('window.RootinsModal', $common);
-        self::assertStringContainsString('keydown.rootinsModal', $common);
-        self::assertStringContainsString('hidden.bs.modal.rootinsModal', $common);
-        self::assertStringContainsString('rootins-modal-lock', $styles);
+        self::assertStringContainsString('window.UshaDermaModal', $common);
+        self::assertStringContainsString('keydown.ushaDermaModal', $common);
+        self::assertStringContainsString('hidden.bs.modal.ushaDermaModal', $common);
+        self::assertStringContainsString('usha-derma-modal-lock', $styles);
         self::assertStringContainsString('max-height: calc(100vh - 2rem)', $styles);
         self::assertStringContainsString('overflow-y: auto', $styles);
 
@@ -1605,7 +1605,7 @@ final class DoctorWorkflowTest extends TestCase
         self::assertStringContainsString('ensureValidationContainers', $common);
         self::assertStringContainsString('ensureFieldErrorContainer', $common);
         self::assertStringContainsString('initializeValidationContainers(document)', $common);
-        self::assertStringContainsString('shown.bs.modal.rootinsValidation', $common);
+        self::assertStringContainsString('shown.bs.modal.ushaDermaValidation', $common);
         self::assertStringContainsString('validation-error-generated', $common);
         self::assertStringContainsString('id: exactId', $common);
         self::assertStringContainsString('data-validation-name', $common);

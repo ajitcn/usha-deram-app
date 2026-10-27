@@ -43,6 +43,6 @@
                 <?php endif; ?>
             </div>
         </div>
-        <?= view(DOCTOR_VIEW . 'pages/appointments_actions', array_merge($item, compact('canConsult', 'canEdit', 'nextStatuses', 'canView', 'canFollowUp', 'canPrescription', 'canBilling'))) ?>
+        <?= view(DOCTOR_VIEW . 'pages/appointments_actions', array_merge($item, compact('canConsult', 'canEdit', 'nextStatuses', 'canView', 'canFollowUp', 'canPrescription', 'canBilling', 'canCollectFee'))) ?>
     </article>
 <?php endforeach; ?>

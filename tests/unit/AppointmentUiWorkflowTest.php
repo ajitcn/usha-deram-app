@@ -13,7 +13,7 @@ final class AppointmentUiWorkflowTest extends CIUnitTestCase
         $queue = file_get_contents(ROOTPATH . 'public/assets/js/admin/appointment/appointment_queue.js');
         $doctorActions = file_get_contents(ROOTPATH . 'app/Modules/Doctor/Views/pages/appointments_actions.php');
         $patient = file_get_contents(ROOTPATH . 'app/Modules/Patient/Views/pages/appointments.php');
-        $css = file_get_contents(ROOTPATH . 'public/assets/css/rootins-monochrome.css');
+        $css = file_get_contents(ROOTPATH . 'public/assets/css/usha-derma-monochrome.css');
 
         self::assertStringContainsString("permission:appointment.view", $routes);
         self::assertStringContainsString("permission:appointment.edit", $routes);
@@ -21,7 +21,7 @@ final class AppointmentUiWorkflowTest extends CIUnitTestCase
         self::assertStringContainsString('ri-status ri-status--', $admin);
         self::assertStringContainsString('modal-dialog-scrollable ri-scroll-modal', $admin);
         self::assertStringContainsString('ri-actions-menu', $queue);
-        self::assertStringContainsString('rootinsDateToIso', $queue);
+        self::assertStringContainsString('ushaDermaDateToIso', $queue);
         self::assertStringContainsString('ri-status--', $queue);
         self::assertStringContainsString('consultationDatePassed', $doctorActions);
         self::assertStringContainsString('modal-dialog-scrollable', $patient);

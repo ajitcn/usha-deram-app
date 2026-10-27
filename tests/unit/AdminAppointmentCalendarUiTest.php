@@ -12,7 +12,7 @@ final class AdminAppointmentCalendarUiTest extends CIUnitTestCase
         $controller = file_get_contents(ROOTPATH . 'app/Modules/Admin/Controllers/Appointment/Appointment.php');
         $view = file_get_contents(ROOTPATH . 'app/Modules/Admin/Views/pages/appointment/calendar.php');
         $script = file_get_contents(ROOTPATH . 'public/assets/js/admin/appointment/appointment_calendar.js');
-        $css = file_get_contents(ROOTPATH . 'public/assets/css/rootins-monochrome.css');
+        $css = file_get_contents(ROOTPATH . 'public/assets/css/usha-derma-monochrome.css');
 
         self::assertStringContainsString('$routes->get(\'calendar\', \'Appointment::calendar\'', $routes);
         self::assertStringContainsString('$routes->get(\'calendar-data\', \'Appointment::calendarData\'', $routes);

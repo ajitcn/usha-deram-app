@@ -242,9 +242,10 @@ final class PharmacyOrderFulfilmentTest extends CIUnitTestCase
         self::assertStringContainsString("'prescription_id' => 'Prescription must be approved.'", $source);
         self::assertStringContainsString("'items.' . \$index . '.quantity'", $source);
         self::assertStringContainsString('medicine is inactive or missing', $source);
-        self::assertStringContainsString('resolveQuantity', $source);
-        self::assertStringContainsString('cannot be derived from the prescription', $source);
-        self::assertStringContainsString("str_contains(\$frequency, 'twice')", $source);
+        self::assertStringContainsString('validateDispensingQuantities', $source);
+        self::assertStringContainsString('MAX_DISPENSING_QUANTITY', $source);
+        self::assertStringContainsString('must be a positive whole number', $source);
+        self::assertStringNotContainsString('resolveQuantity', $source);
         self::assertStringContainsString('if ($updated === false)', $source);
         self::assertStringContainsString('$db->affectedRows()', $source);
         self::assertStringContainsString('return $this->result(409', $source);
@@ -262,6 +263,57 @@ final class PharmacyOrderFulfilmentTest extends CIUnitTestCase
         self::assertStringContainsString('csrf_field()', $modal);
         self::assertStringContainsString('handleFormAjaxError(form, xhr', $script);
         self::assertStringContainsString('clearFormErrors(form)', $script);
+    }
+
+    public function testPharmacyCreationSeparatesDispensingQuantityFromPrescriptionQuantity(): void
+    {
+        $service = file_get_contents(ROOTPATH . 'app/Modules/Pharmacy/Services/OrderFulfilmentService.php');
+        $controller = file_get_contents(ROOTPATH . 'app/Modules/Pharmacy/Controllers/Orders.php');
+        $modal = file_get_contents(ROOTPATH . 'app/Modules/Pharmacy/Views/pages/orders/_create_modal.php');
+        $script = file_get_contents(ROOTPATH . 'public/assets/js/pharmacy/orders.js');
+        self::assertStringContainsString('approvedPrescriptionDetail', $controller . $service);
+        self::assertStringContainsString('orders/prescription/(:num)', file_get_contents(ROOTPATH . 'app/Modules/Pharmacy/Config/Routes.php'));
+        self::assertStringNotContainsString('dispensing-quantity', $modal . $script);
+        self::assertStringNotContainsString('name="items[', $modal);
+        self::assertStringContainsString('Quantity not entered', $script);
+        self::assertStringContainsString("'Qty: '", $script);
+        self::assertStringContainsString('prescription_item_id', $service);
+        self::assertStringContainsString('doctor_quantity', $service . $script);
+        self::assertStringContainsString('dispensing_quantity', $service);
+        self::assertStringContainsString('$submittedItems === []', $service);
+        self::assertStringContainsString('Complete Prescription Review', $service . $script);
+        self::assertStringContainsString('validateDispensingQuantities', $service);
+        self::assertStringNotContainsString('resolveQuantity', $service);
+    }
+
+    public function testCreateOrderPrescriptionSelectorShowsOnlyPatientAndPrescription(): void
+    {
+        $modal = file_get_contents(ROOTPATH . 'app/Modules/Pharmacy/Views/pages/orders/_create_modal.php');
+
+        self::assertStringContainsString('Select Prescription', $modal);
+        self::assertStringContainsString('Search and select an approved prescription', $modal);
+        self::assertStringContainsString('$patientLabel . \' — \' . $prescriptionLabel', $modal);
+        self::assertStringNotContainsString('$medicineLabel', $modal);
+        self::assertStringNotContainsString('data-subtext=', $modal);
+        self::assertStringContainsString('name="prescription_id"', $modal);
+    }
+
+    public function testOrderPricingUsesServerCalculatedInvoiceBreakdown(): void
+    {
+        $service = file_get_contents(ROOTPATH . 'app/Modules/Pharmacy/Services/OrderFulfilmentService.php');
+        $controller = file_get_contents(ROOTPATH . 'app/Modules/Pharmacy/Controllers/Orders.php');
+        $modal = file_get_contents(ROOTPATH . 'app/Modules/Pharmacy/Views/pages/orders/_create_modal.php');
+        $migration = file_get_contents(ROOTPATH . 'app/Database/Migrations/2026-10-23-170000_AddPharmacyOrderPricing.php');
+
+        foreach (['courier_charges', 'discount_type', 'discount_value', 'pricing_updated_by', 'validatePricing', 'medicine_subtotal', 'grand_total'] as $needle) {
+            self::assertStringContainsString($needle, $service . $controller . $modal . $migration);
+        }
+        self::assertStringContainsString('$medicineSubtotal + $courier + $otherCharges - $discountAmount', $service);
+        self::assertStringContainsString('pricing_updated_at', $service);
+        self::assertStringContainsString('Order Summary', $modal);
+        self::assertStringContainsString('Courier Charges', $modal);
+        self::assertStringContainsString('Discount Type', $modal);
+        self::assertStringContainsString('Grand Total', $modal);
     }
 
     public function testCentralAllocationUsesApplicationDateAndExactBatchLinkForRelease(): void

@@ -1,16 +1,16 @@
-/* ROOTINS shared modal layer.
+/* USHA DERMA shared modal layer.
  * Keeps Bootstrap modal behavior intact while preventing ancestor stacking
  * contexts and stale backdrops from making modal controls unclickable.
  */
 (function (window, document, $) {
     'use strict';
 
-    var placeholderKey = 'rootinsModalPlaceholder';
+    var placeholderKey = 'ushaDermaModalPlaceholder';
     var cleanupTimer = null;
 
     function portal(modal) {
         if (!modal || modal.parentNode === document.body || $.data(modal, placeholderKey)) return;
-        var placeholder = document.createComment('rootins-modal-placeholder');
+        var placeholder = document.createComment('usha-derma-modal-placeholder');
         modal.parentNode.insertBefore(placeholder, modal);
         document.body.appendChild(modal);
         $.data(modal, placeholderKey, placeholder);
@@ -44,19 +44,19 @@
     }
 
     $(document)
-        .off('show.bs.modal.rootinsLayer', '.modal')
-        .on('show.bs.modal.rootinsLayer', '.modal', function () {
+        .off('show.bs.modal.ushaDermaLayer', '.modal')
+        .on('show.bs.modal.ushaDermaLayer', '.modal', function () {
             portal(this);
         })
-        .off('shown.bs.modal.rootinsLayer', '.modal')
-        .on('shown.bs.modal.rootinsLayer', '.modal', function () {
+        .off('shown.bs.modal.ushaDermaLayer', '.modal')
+        .on('shown.bs.modal.ushaDermaLayer', '.modal', function () {
             cleanupBackdrops();
         })
-        .off('hidden.bs.modal.rootinsLayer', '.modal')
-        .on('hidden.bs.modal.rootinsLayer', '.modal', function () {
+        .off('hidden.bs.modal.ushaDermaLayer', '.modal')
+        .on('hidden.bs.modal.ushaDermaLayer', '.modal', function () {
             restore(this);
             scheduleCleanup();
         })
-        .off('ajaxError.rootinsLayer ajaxStop.rootinsLayer')
-        .on('ajaxError.rootinsLayer ajaxStop.rootinsLayer', scheduleCleanup);
+        .off('ajaxError.ushaDermaLayer ajaxStop.ushaDermaLayer')
+        .on('ajaxError.ushaDermaLayer ajaxStop.ushaDermaLayer', scheduleCleanup);
 }(window, document, window.jQuery));

@@ -7,6 +7,7 @@ use App\Services\Common\PatientPdfService;
 use App\Services\Common\PrintFormatter;
 use App\Services\Common\PrescriptionPdfService;
 use App\Services\PatientScope;
+use App\Services\ConsultationFeePaymentService;
 use CodeIgniter\HTTP\ResponseInterface;
 use Throwable;
 
@@ -31,7 +32,7 @@ final class Pdf extends BaseController
 
         $db = db_connect();
         $record = $db->table('prescriptions')
-            ->select('prescriptions.*, doctors.first_name AS doctor_first_name, doctors.last_name AS doctor_last_name, doctors.qualification, clinics.clinic_name, clinics.address AS clinic_address, clinics.mobile AS clinic_mobile, clinics.email AS clinic_email, patients.first_name AS patient_first_name, patients.last_name AS patient_last_name, patients.registration_number')
+            ->select('prescriptions.*, doctors.first_name AS doctor_first_name, doctors.last_name AS doctor_last_name, doctors.qualification, clinics.clinic_name, clinics.address AS clinic_address, clinics.mobile AS clinic_mobile, clinics.email AS clinic_email, patients.first_name AS patient_first_name, patients.last_name AS patient_last_name, patients.registration_number, patients.date_of_birth AS patient_date_of_birth, patients.age AS patient_age')
             ->join('doctors', 'doctors.id = prescriptions.doctor_id')
             ->join('clinics', 'clinics.id = prescriptions.clinic_id')
             ->join('patients', 'patients.id = prescriptions.patient_id')
@@ -48,9 +49,9 @@ final class Pdf extends BaseController
         }
 
         try {
-            $items = $db->table('prescription_items')->where('prescription_id', (int) $record['id'])->orderBy('id')->get()->getResultArray();
+            $items = $db->table('prescription_items')->select('prescription_items.*, prescription_items.duration AS medicine_duration')->where('prescription_id', (int) $record['id'])->orderBy('id')->get()->getResultArray();
             $record['prescription_date'] = PrintFormatter::date($record['prescription_date'] ?? null);
-            $record['clinic_name'] = $record['clinic_name'] ?: 'ROOTINS Clinic';
+            $record['clinic_name'] = $record['clinic_name'] ?: 'USHA DERMA Clinic';
             $pdf = (new PrescriptionPdfService())->generate($record, $items);
             $this->audit('patient.prescription_pdf_downloaded', $context, ['prescription_id' => (int) $record['id']]);
 
@@ -71,7 +72,7 @@ final class Pdf extends BaseController
 
         $db = db_connect();
         $order = $db->table('medicine_orders AS orders')
-            ->select('orders.*, prescriptions.prescription_number, patients.first_name AS patient_first_name, patients.last_name AS patient_last_name, patients.registration_number, clinics.clinic_name, clinics.address AS clinic_address, clinics.mobile AS clinic_mobile, clinics.email AS clinic_email, providers.provider_name AS delivery_provider_name')
+            ->select('orders.*, prescriptions.prescription_number, prescriptions.medicine_duration, patients.first_name AS patient_first_name, patients.last_name AS patient_last_name, patients.registration_number, clinics.clinic_name, clinics.address AS clinic_address, clinics.mobile AS clinic_mobile, clinics.email AS clinic_email, providers.provider_name AS delivery_provider_name')
             ->join('prescriptions', 'prescriptions.id = orders.prescription_id')
             ->join('patients', 'patients.id = orders.patient_id')
             ->join('clinics', 'clinics.id = orders.clinic_id')
@@ -90,7 +91,7 @@ final class Pdf extends BaseController
         }
 
         try {
-            $items = $db->table('medicine_order_items')->select('medicine_name, quantity, unit_price, line_total')->where('order_id', (int) $order['id'])->orderBy('id')->get()->getResultArray();
+            $items = $db->table('medicine_order_items AS order_items')->select('order_items.medicine_name, order_items.quantity, order_items.unit_price, order_items.line_total, COALESCE(prescription_items.duration, order_items.duration) AS medicine_duration', false)->join('prescription_items', 'prescription_items.id = order_items.prescription_item_id', 'left')->where('order_items.order_id', (int) $order['id'])->orderBy('order_items.id')->get()->getResultArray();
             $itemRows = [];
             $orderTotal = 0.0;
             foreach ($items as $index => $item) {
@@ -98,8 +99,12 @@ final class Pdf extends BaseController
                 $orderTotal += $lineTotal;
                 $itemRows[] = ['Medicine ' . ($index + 1), trim((string) ($item['medicine_name'] ?? 'Medicine')) . ' | Quantity: ' . (int) ($item['quantity'] ?? 0) . ' | Total: ' . PrintFormatter::currency($lineTotal)];
             }
+            $commonDuration = trim((string) ($order['medicine_duration'] ?? ''));
+            $durationSummary = $commonDuration === '' ? '' : $commonDuration . ($commonDuration === '1' ? ' day' : ' days');
+            $orderSummaryRows = [['Order number', $order['order_number'] ?? ''], ['Order date', $this->dateTime($order['created_at'] ?? null)], ['Order status', $this->label($order['status'] ?? '')], ['Prescription', $order['prescription_number'] ?? '']];
+            if ($durationSummary !== '') $orderSummaryRows[] = ['Duration Days', $durationSummary];
             $sections = [
-                ['title' => 'ORDER SUMMARY', 'rows' => [['Order number', $order['order_number'] ?? ''], ['Order date', $this->dateTime($order['created_at'] ?? null)], ['Order status', $this->label($order['status'] ?? '')], ['Prescription', $order['prescription_number'] ?? '']]],
+                ['title' => 'ORDER SUMMARY', 'rows' => $orderSummaryRows],
                 ['title' => 'MEDICINES / ITEMS', 'rows' => $itemRows],
                 ['title' => 'PAYMENT', 'rows' => [['Payment status', $this->label($order['payment_status'] ?? '')], ['Order total', PrintFormatter::currency($orderTotal)]]],
                 ['title' => 'DELIVERY', 'rows' => [['Delivery status', $this->label($order['delivery_status'] ?? '')], ['Provider', $order['delivery_provider_name'] ?? $order['delivery_provider'] ?? ''], ['Tracking reference', $order['tracking_reference'] ?? ''], ['Delivery address', $order['delivery_address_snapshot'] ?? ''], ['Delivery contact', $order['delivery_contact_snapshot'] ?? '']]],
@@ -139,9 +144,11 @@ final class Pdf extends BaseController
             return $this->error(404, 'Appointment not found.');
         }
 
+        $fee = (new ConsultationFeePaymentService())->summary((int) $appointment['id'], (int) $context['clinic_id']);
+
         try {
             $sections = [
-                ['title' => 'APPOINTMENT', 'rows' => [['Appointment number', $appointment['appointment_number'] ?? ''], ['Date', $this->date($appointment['appointment_date'] ?? null)], ['Time', $this->time($appointment['appointment_time'] ?? null)], ['Type', $this->label($appointment['appointment_type'] ?? '')], ['Status', $this->label($appointment['status'] ?? '')]]],
+                ['title' => 'APPOINTMENT', 'rows' => [['Appointment number', $appointment['appointment_number'] ?? ''], ['Date', $this->date($appointment['appointment_date'] ?? null)], ['Time', $this->time($appointment['appointment_time'] ?? null)], ['Type', $this->label($appointment['appointment_type'] ?? '')], ['Status', $this->label($appointment['status'] ?? '')], ['Consultation Fee', number_format((float) ($fee['consultation_fee'] ?? 0), 2) . ' INR'], ['Consultation Fee Paid', number_format((float) ($fee['paid_amount'] ?? 0), 2) . ' INR'], ['Payment status', $this->label($fee['payment_status'] ?? 'unpaid')], ['Payment date/time', $fee['payment_date'] ?? 'Not recorded'], ['Payment method', $fee['payment_method'] ?? 'Not recorded'], ['Receipt/reference', $fee['receipt_number'] ?? ($fee['reference_number'] ?? 'Not recorded')]]],
                 ['title' => 'DOCTOR / SERVICE', 'rows' => [['Doctor', trim('Dr. ' . ($appointment['doctor_first_name'] ?? '') . ' ' . ($appointment['doctor_last_name'] ?? ''))], ['Qualification', $appointment['qualification'] ?? ''], ['Service', $appointment['service_name'] ?? '']]],
                 ['title' => 'REMARKS', 'rows' => [['Reason for visit', $appointment['reason_for_visit'] ?? ''], ['Notes', $appointment['notes'] ?? '']]],
             ];

@@ -9,8 +9,8 @@ password in application logs or the UI.
 Set temporary environment variables in the local shell, then run:
 
 ```powershell
-$env:ROOTINS_TEST_ADMIN_EMAIL = 'admin-uat@example.test'
-$env:ROOTINS_TEST_ADMIN_PASSWORD = '<local-only-password>'
+$env:USHA_DERMA_TEST_ADMIN_EMAIL = 'admin-uat@example.test'
+$env:USHA_DERMA_TEST_ADMIN_PASSWORD = '<local-only-password>'
 php spark db:seed LocalAdminUatSeeder
 ```
 

@@ -30,7 +30,7 @@
         }
     };
 
-    const post = (url, data) => rootinsFetch(url, {
+    const post = (url, data) => ushaDermaFetch(url, {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
         body: new URLSearchParams(Object.assign({}, data, csrfName ? { [csrfName]: csrfValue } : {}))
@@ -124,7 +124,7 @@
         });
     });
 
-    const instructions = () => 'ROOTINS Core API\nBase URL: ' + page.dataset.baseUrl + '\nHeaders: X-API-Key-Id, X-API-Timestamp, X-API-Signature; POST requests also require Idempotency-Key.\nSign: timestamp + newline + uppercase method + newline + /api/v1/path + newline + raw request body.';
+    const instructions = () => 'USHA DERMA Core API\nBase URL: ' + page.dataset.baseUrl + '\nHeaders: X-API-Key-Id, X-API-Timestamp, X-API-Signature; POST requests also require Idempotency-Key.\nSign: timestamp + newline + uppercase method + newline + /api/v1/path + newline + raw request body.';
     document.getElementById('core-api-copy-instructions')?.addEventListener('click', (event) => {
         copy(instructions()).then(() => setBusy(event.currentTarget, false));
         setBusy(event.currentTarget, true, 'Copying');
@@ -137,7 +137,7 @@
         setBusy(event.currentTarget, true, 'Preparing');
         const link = document.createElement('a');
         link.href = URL.createObjectURL(new Blob([instructions()], { type: 'text/plain' }));
-        link.download = 'rootins-core-api-instructions.txt';
+        link.download = 'usha-derma-core-api-instructions.txt';
         link.click();
         URL.revokeObjectURL(link.href);
         setTimeout(() => setBusy(event.currentTarget, false), 350);

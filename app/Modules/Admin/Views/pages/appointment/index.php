@@ -10,6 +10,7 @@ $canEdit = $canEdit ?? in_array('appointment.edit', $permissions, true);
 $canDelete = $canDelete ?? in_array('appointment.delete', $permissions, true);
 $canConsult = $canConsult ?? in_array('consultation.view', $permissions, true) && in_array('consultation.create', $permissions, true);
 $canBilling = $canBilling ?? in_array('billing.view', $permissions, true);
+$canCollectFee = $canCollectFee ?? in_array('billing.edit', $permissions, true);
 ?>
 <main class="dashboard-container admin-appointment-page">
     <?= view('templates/_breadcrumb', [
@@ -91,7 +92,7 @@ $canBilling = $canBilling ?? in_array('billing.view', $permissions, true);
                         <td class="admin-appointment-cell admin-appointment-cell-appointment" data-label="Appointment">
                             <div class="admin-appointment-date-time">
                                 <span class="admin-appointment-number" title="<?= esc($appointmentNumber) ?>"><?= esc($appointmentNumber) ?></span>
-                                <time class="admin-appointment-date" datetime="<?= esc($appointment['appointment_date'] ?? '') ?>"><?= esc(rootins_format_date($appointment['appointment_date'] ?? '')) ?></time>
+                                <time class="admin-appointment-date" datetime="<?= esc($appointment['appointment_date'] ?? '') ?>"><?= esc(usha_derma_format_date($appointment['appointment_date'] ?? '')) ?></time>
                                 <time class="admin-appointment-time" datetime="<?= esc(($appointment['appointment_date'] ?? '') . 'T' . ($appointment['appointment_time'] ?? '')) ?>"><?= esc(substr((string) ($appointment['appointment_time'] ?? ''), 0, 5)) ?></time>
                             </div>
                             <span class="admin-appointment-meta admin-appointment-service" title="<?= esc($serviceName) ?>"><i class="bi bi-briefcase mr-1" aria-hidden="true"></i><?= esc($serviceName) ?></span>
@@ -120,6 +121,7 @@ $canBilling = $canBilling ?? in_array('billing.view', $permissions, true);
                             <?php if ($canCancel): ?><button type="button" class="dropdown-item text-danger cancel-appointment" data-id="<?= (int) $appointment['id'] ?>" data-appointment-number="<?= esc($appointmentNumber) ?>" aria-label="Cancel appointment <?= esc($appointmentNumber) ?>"><i class="bi bi-x-circle mr-2" aria-hidden="true"></i>Cancel appointment</button><?php endif; ?>
                             <?php if ($canConsult && ! empty($appointment['consultation_eligible'])): ?><a href="<?= base_url('admin/consultations') . '?appointment_id=' . (int) $appointment['id'] ?>" class="dropdown-item" role="menuitem"><i class="bi bi-clipboard2-pulse mr-2" aria-hidden="true"></i>Consult</a><?php endif; ?>
                             <?php if ($canBilling): ?><a href="<?= base_url('admin/billing') . '?appointment_id=' . (int) $appointment['id'] ?>" class="dropdown-item" role="menuitem"><i class="bi bi-receipt mr-2" aria-hidden="true"></i>Billing / payment</a><?php endif; ?>
+                            <?php $feeSummary = $appointment['fee_summary'] ?? []; if ($canCollectFee && !in_array($statusKey, ['cancelled', 'no_show'], true) && (float) ($feeSummary['remaining_amount'] ?? 0) > 0): ?><button type="button" class="dropdown-item js-consultation-fee" data-appointment-id="<?= (int) $appointment['id'] ?>" data-appointment-number="<?= esc($appointmentNumber, 'attr') ?>" data-amount="<?= esc(number_format((float) ($feeSummary['remaining_amount'] ?? 0), 2, '.', ''), 'attr') ?>"><i class="bi bi-cash-coin mr-2" aria-hidden="true"></i>Collect consultation fee</button><?php endif; ?>
                             <?php if ($canDelete): ?><button type="button" class="dropdown-item text-danger delete-appointment" data-id="<?= (int) $appointment['id'] ?>" data-appointment-number="<?= esc($appointmentNumber) ?>" aria-label="Delete appointment <?= esc($appointmentNumber) ?>"><i class="bi bi-trash mr-2" aria-hidden="true"></i>Delete</button><?php endif; ?>
                                 </div>
                             </div>
@@ -135,6 +137,8 @@ $canBilling = $canBilling ?? in_array('billing.view', $permissions, true);
         'filters' => $filters,
     ]) ?>
 </main>
+
+<?= view('parts/consultation_fee_modal', ['canCollectFee' => $canCollectFee, 'feeEndpoint' => base_url('admin/appointments/collect-fee')]) ?>
 
 <div class="modal fade" id="appointmentFilterModal" tabindex="-1" role="dialog" aria-labelledby="appointmentFilterTitle" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
@@ -343,7 +347,7 @@ $canBilling = $canBilling ?? in_array('billing.view', $permissions, true);
 </div>
 
 <?= $this->section('scripts') ?>
-<script src="<?= base_url('assets/js/admin/appointment/appointment.js') ?>"></script>
+<script src="<?= base_url('assets/js/admin/appointment/appointment.js?v=20261027-edit-modal4') ?>"></script>
 <?= $this->endSection() ?>
 
 <?= $this->endSection() ?>

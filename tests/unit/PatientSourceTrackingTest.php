@@ -9,7 +9,7 @@ final class PatientSourceTrackingTest extends CIUnitTestCase
     public function testSupportedLabelsAndUnknownFallbackAreStable(): void
     {
         self::assertSame('Self', patient_source_label('self'));
-        self::assertSame('Shopify', patient_source_label('shopify'));
+        self::assertSame('Core API', patient_source_label('core_api'));
         self::assertSame('Unknown', patient_source_label(null));
         self::assertSame('Unknown', patient_source_label('admin'));
     }
@@ -20,7 +20,7 @@ final class PatientSourceTrackingTest extends CIUnitTestCase
 
         self::assertStringContainsString('$source[\'source_type\'] ?? \'self\'', $service);
         self::assertStringContainsString('unset($patientData[\'source_type\'])', $service);
-        self::assertStringContainsString("['self', 'shopify']", $service);
+        self::assertStringContainsString("['self', 'core_api']", $service);
         self::assertStringNotContainsString('$patientData[\'source_type\'] ?? \'admin\'', $service);
     }
 
@@ -33,7 +33,7 @@ final class PatientSourceTrackingTest extends CIUnitTestCase
         self::assertStringContainsString("['source_type' => 'self'", $admin);
         self::assertStringContainsString("['source_type' => 'self'", $doctor);
         self::assertStringContainsString('unset($payload[\'source_type\'])', $coreApi);
-        self::assertStringContainsString("['source_type' => 'shopify'", $coreApi);
+        self::assertStringContainsString("['source_type' => 'core_api'", $coreApi);
     }
 
     public function testExistingPatientUpdatesDoNotOverwriteSource(): void
@@ -70,7 +70,7 @@ final class PatientSourceTrackingTest extends CIUnitTestCase
 
         $doctorFilters = file_get_contents(ROOTPATH . 'app/Modules/Doctor/Views/pages/patients.php');
         self::assertStringContainsString("'self' => 'Self'", $doctorFilters);
-        self::assertStringContainsString("'shopify' => 'Shopify'", $doctorFilters);
+        self::assertStringContainsString("'core_api' => 'Core API'", $doctorFilters);
         self::assertStringContainsString("'unknown' => 'Unknown'", $doctorFilters);
     }
 }

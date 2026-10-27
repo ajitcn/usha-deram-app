@@ -4,8 +4,6 @@
 <?php
 $path = trim(uri_string(), '/');
 $permissions = session('permissions') ?? [];
-$sessionUser = session('user') ?? [];
-$displayName = trim((string) ($sessionUser['username'] ?? $sessionUser['email'] ?? 'Doctor')) ?: 'Doctor';
 $can = static fn (string $permission): bool => in_array($permission, $permissions, true);
 $active = static function (string $prefix) use ($path): bool {
     $prefix = trim($prefix, '/');
@@ -16,12 +14,11 @@ $active = static function (string $prefix) use ($path): bool {
 <nav id="sidebar" aria-label="Doctor panel navigation">
     <div class="sidebar-brand">
         <span class="brand-img">
-            <img src="<?= base_url('assets/img/logo.png') ?>" alt="ROOTINS">
+            <img src="<?= base_url('assets/img/logo.png') ?>" alt="USHA DERMA">
         </span>
         <span class="system-tag">Doctor</span>
         <button type="button" class="sidebar-close d-lg-none" data-sidebar-close aria-label="Close navigation"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
     </div>
-    <div class="sidebar-user"><span class="sidebar-avatar" aria-hidden="true"><?= esc(strtoupper(substr($displayName, 0, 1))) ?></span><span class="sidebar-user-copy"><strong><?= esc($displayName) ?></strong><small>Doctor workspace</small></span></div>
 
     <ul class="sidebar-nav" id="sidebarMenu" aria-label="Doctor navigation">
             <li class="sidebar-section-title" aria-hidden="true">Workspace</li>
@@ -37,7 +34,6 @@ $active = static function (string $prefix) use ($path): bool {
                     </a>
                 </li>
             <?php endif; ?>
-
             <?php if ($can('consultation.view')): ?>
                 <li class="nav-item">
                     <a
@@ -114,6 +110,12 @@ $active = static function (string $prefix) use ($path): bool {
                         <span>Prescriptions</span>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= $active('doctor/prescription-clarifications') ? 'active' : '' ?>" href="<?= base_url('doctor/prescription-clarifications') ?>">
+                        <i class="bi bi-chat-left-text menu-icon" aria-hidden="true"></i>
+                        <span>Prescription clarifications</span>
+                    </a>
+                </li>
             <?php endif; ?>
 
             <?php if ($can('billing.view')): ?>
@@ -153,60 +155,5 @@ $active = static function (string $prefix) use ($path): bool {
 <?= $this->endSection() ?>
 
 <?= $this->section('top-menu') ?>
-<div class="sticky-top-area">
-    <header class="top-header d-flex align-items-center justify-content-between">
-        <div class="d-flex align-items-center gap-3">
-            <button
-                class="btn btn-sm btn-light d-lg-none"
-                id="sidebarToggle"
-                type="button"
-                aria-label="Toggle navigation"
-                aria-controls="sidebar"
-                aria-expanded="false"
-            >
-                <i class="bi bi-list fs-5" aria-hidden="true"></i>
-            </button>
-            <div>
-                <span class="topbar-kicker">ROOTINS</span>
-                <span class="font-weight-bold d-block">Doctor Panel</span>
-            </div>
-        </div>
-
-        <div class="d-flex align-items-center gap-2">
-            <form class="doctor-top-patient-search d-none d-md-flex align-items-center" method="get" action="<?= base_url('doctor/patients') ?>">
-                <label class="sr-only" for="doctor-top-patient-search">Search patients</label>
-                <div class="input-group input-group-sm">
-                    <div class="input-group-prepend"><span class="input-group-text bg-transparent border-right-0"><i class="bi bi-search" aria-hidden="true"></i></span></div>
-                    <input id="doctor-top-patient-search" class="form-control border-left-0" type="search" name="search" placeholder="Search patients" autocomplete="off">
-                </div>
-            </form>
-            <a
-                class="btn-tabler-icon"
-                href="<?= base_url('doctor/notifications') ?>"
-                title="Notifications"
-                aria-label="Notifications"
-            >
-                <i class="bi bi-bell" aria-hidden="true"></i>
-            </a>
-            <?php if ($can('doctor.view')): ?>
-                <a
-                    class="btn-tabler-icon"
-                    href="<?= base_url('doctor/profile') ?>"
-                    title="Doctor profile"
-                    aria-label="Doctor profile"
-                >
-                    <i class="bi bi-person-circle" aria-hidden="true"></i>
-                </a>
-            <?php endif; ?>
-            <div class="vr mx-1 opacity-25"></div>
-            <a
-                class="btn btn-sm btn-light"
-                href="<?= base_url('system/logout') ?>"
-            >
-                <i class="bi bi-box-arrow-right mr-1" aria-hidden="true"></i>
-                Log out
-            </a>
-        </div>
-    </header>
-</div>
+<?= view('parts/module_topbar', ['moduleLabel' => 'Doctor panel', 'logoutUrl' => base_url('system/logout'), 'notificationsUrl' => base_url('doctor/notifications'), 'profileUrl' => $can('doctor.view') ? base_url('doctor/profile') : '']) ?>
 <?= $this->endSection() ?>

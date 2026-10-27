@@ -5,7 +5,6 @@ namespace App\Filters;
 use CodeIgniter\Filters\FilterInterface;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
-use Config\Database;
 
 class Permission implements FilterInterface
 {
@@ -44,36 +43,7 @@ class Permission implements FilterInterface
             return;
         }
 
-        try {
-            // Authorization is application data and must not follow the test
-            // connection selected by db_connect() in CIUnit tests.
-            $db = Database::connect('default');
-            $rows = $db->table('user_roles')
-                ->select('permissions.permission_key')
-                ->join('role_permissions', 'role_permissions.role_id = user_roles.role_id')
-                ->join('permissions', 'permissions.id = role_permissions.permission_id')
-                ->where('user_roles.user_id', $userId)
-                ->where('permissions.status', 1)
-                ->get()->getResultArray();
-            $permissions = array_column($rows, 'permission_key');
-
-            $roleRows = $db->table('user_roles')
-                ->select('roles.role_name, roles.role_code')
-                ->join('roles', 'roles.id = user_roles.role_id')
-                ->where('user_roles.user_id', $userId)
-                ->get()->getResultArray();
-            $sessionRoles = array_map(static function (array $role): string {
-                return in_array((string) ($role['role_name'] ?? ''), ['FarmAssist', 'Farmassist'], true)
-                    ? 'Pharmacy Assistant'
-                    : (string) ($role['role_name'] ?? '');
-            }, $roleRows);
-            session()->set([
-                'roles' => array_values(array_unique($sessionRoles)),
-                'permissions' => array_values(array_unique($permissions)),
-            ]);
-        } catch (\Throwable $exception) {
-            log_message('error', 'Permission session refresh failed safely.');
-        }
+        service('auth')->refreshAuthorizationSession();
     }
 
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)

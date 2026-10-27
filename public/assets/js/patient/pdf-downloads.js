@@ -21,13 +21,13 @@
         if (! button.length) {
             button = $('<a>', { class: 'btn btn-primary patient-pdf-download', target: '_blank', rel: 'noopener noreferrer' }).prependTo(footer);
         }
-        button.attr('href', window.rootinsPatientPdfBase + '/' + definition.path + '/' + encodeURIComponent(reference) + '/pdf').html('<i class="bi bi-file-earmark-pdf mr-1" aria-hidden="true"></i>Download PDF');
+        button.attr('href', window.ushaDermaPatientPdfBase + '/' + definition.path + '/' + encodeURIComponent(reference) + '/pdf').html('<i class="bi bi-file-earmark-pdf mr-1" aria-hidden="true"></i>Download PDF');
         if (definition.path === 'invoices' && ['paid', 'refunded'].indexOf(String(record.payment_status || '').toLowerCase()) !== -1) {
             var receipt = modal.find('.patient-receipt-download');
             if (! receipt.length) {
                 receipt = $('<a>', { class: 'btn btn-outline-primary patient-receipt-download', target: '_blank', rel: 'noopener noreferrer' }).insertAfter(button);
             }
-            receipt.attr('href', window.rootinsPatientPdfBase + '/invoices/' + encodeURIComponent(reference) + '/receipt').html('<i class="bi bi-receipt mr-1" aria-hidden="true"></i>Payment receipt');
+            receipt.attr('href', window.ushaDermaPatientPdfBase + '/invoices/' + encodeURIComponent(reference) + '/receipt').html('<i class="bi bi-receipt mr-1" aria-hidden="true"></i>Payment receipt');
         }
     }
 

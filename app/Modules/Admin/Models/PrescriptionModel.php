@@ -16,7 +16,7 @@ class PrescriptionModel extends Model
 
     protected $protectFields = true;
 
-    protected $allowedFields = ['prescription_number', 'consultation_id', 'patient_id', 'doctor_id', 'clinic_id', 'prescription_date', 'notes', 'status', 'created_at', 'updated_at'];
+    protected $allowedFields = ['prescription_number', 'consultation_id', 'patient_id', 'doctor_id', 'clinic_id', 'prescription_date', 'medicine_duration', 'notes', 'status', 'created_at', 'updated_at'];
 
     protected $useTimestamps = true;
 

@@ -32,6 +32,9 @@ $routes->group('admin/billing', ['namespace' => 'Admin\Controllers', 'filter' =>
     $routes->post('finalize/(:num)', 'Billing::finalize/$1', ['filter' => 'permission:billing.edit']);
     $routes->post('payment/(:num)', 'Billing::payment/$1', ['filter' => 'permission:billing.edit']);
 });
+$routes->group('admin/appointments', ['namespace' => 'Admin\\Controllers\\Appointment', 'filter' => 'auth'], function ($routes) {
+    $routes->post('collect-fee/(:num)', 'Appointment::collectFee/$1', ['filter' => 'permission:billing.edit']);
+});
 $routes->group('admin/audit', ['namespace' => 'Admin\Controllers', 'filter' => 'auth'], function ($routes) {
     $routes->get('/', 'Audit::index', ['filter' => 'permission:audit.view']);
 });

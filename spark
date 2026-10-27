@@ -99,7 +99,7 @@ if (is_file($envFile) && ! is_readable($envFile)) {
 
     $temporaryEnvDirectory = rtrim(sys_get_temp_dir(), '\\/')
         . DIRECTORY_SEPARATOR
-        . 'rootins-cli-env-' . getmypid();
+        . 'usha-derma-cli-env-' . getmypid();
 
     if (! is_dir($temporaryEnvDirectory)
         && ! mkdir($temporaryEnvDirectory, 0700, true)

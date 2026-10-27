@@ -11,7 +11,7 @@ final class PreloaderWorkflowTest extends TestCase
         $common = file_get_contents(ROOTPATH . 'public/assets/js/common.js');
 
         self::assertStringContainsString('document.addEventListener(\'submit\'', $common);
-        self::assertStringContainsString('rootinsRestoreFormState(formState)', $common);
+        self::assertStringContainsString('ushaDermaRestoreFormState(formState)', $common);
         self::assertStringContainsString('if (loaderVisible)', $common);
         self::assertStringContainsString("clearFormErrors(formState.form)", $common);
         self::assertStringContainsString("prop('disabled', true).attr('aria-busy', 'true')", $common);
@@ -23,7 +23,7 @@ final class PreloaderWorkflowTest extends TestCase
         self::assertStringContainsString("requestStatus === 'abort'", $common);
         self::assertStringContainsString('case 409:', $common);
         self::assertStringContainsString('handleFormAjaxError(formState ? formState.form : null', $common);
-        self::assertStringContainsString('function rootinsFetch(url, options)', $common);
+        self::assertStringContainsString('function ushaDermaFetch(url, options)', $common);
         self::assertStringContainsString('controller.abort()', $common);
     }
 
@@ -45,10 +45,7 @@ final class PreloaderWorkflowTest extends TestCase
             self::assertStringNotContainsString('hide_loader()', file_get_contents(ROOTPATH . $file), $file);
         }
 
-        self::assertStringContainsString('rootinsFetch(', file_get_contents(ROOTPATH . 'public/assets/js/admin/core-api/core-api.js'));
+        self::assertStringContainsString('ushaDermaFetch(', file_get_contents(ROOTPATH . 'public/assets/js/admin/core-api/core-api.js'));
         self::assertStringNotContainsString('= fetch(', file_get_contents(ROOTPATH . 'public/assets/js/admin/core-api/core-api.js'));
-        $shopify = file_get_contents(ROOTPATH . 'app/Modules/Admin/Views/pages/integrations/shopify.php');
-        self::assertStringContainsString('rootinsFetch(', $shopify);
-        self::assertStringNotContainsString('        fetch(', $shopify);
     }
 }

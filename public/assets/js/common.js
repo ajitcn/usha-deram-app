@@ -234,8 +234,8 @@ function clearFormErrors(target) {
 }
 
 $(document)
-    .off('input.rootinsFieldErrors change.rootinsFieldErrors', 'form :input')
-    .on('input.rootinsFieldErrors change.rootinsFieldErrors', 'form :input', function () {
+    .off('input.ushaDermaFieldErrors change.ushaDermaFieldErrors', 'form :input')
+    .on('input.ushaDermaFieldErrors change.ushaDermaFieldErrors', 'form :input', function () {
         const name = $(this).attr('name') || $(this).attr('data-validation-name');
         if (name) {
             clearFieldError($(this).closest('form'), name);
@@ -246,12 +246,12 @@ $(function () {
     initializeValidationContainers(document);
 });
 
-$(document).on('shown.bs.modal.rootinsValidation', '.modal', function () {
+$(document).on('shown.bs.modal.ushaDermaValidation', '.modal', function () {
     initializeValidationContainers(this);
 });
 
 /* Shared Doctor modal behavior for same-page workflows. */
-window.RootinsModal = (function () {
+window.UshaDermaModal = (function () {
     const focusable = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
     function focusInitial(modal) {
@@ -291,25 +291,25 @@ window.RootinsModal = (function () {
     }
 
     $(document)
-        .off('show.bs.modal.rootinsModal', '.modal')
-        .on('show.bs.modal.rootinsModal', '.modal', function (event) {
+        .off('show.bs.modal.ushaDermaModal', '.modal')
+        .on('show.bs.modal.ushaDermaModal', '.modal', function (event) {
             const opener = event.relatedTarget && $(event.relatedTarget).length
                 ? $(event.relatedTarget)
                 : $(document.activeElement);
-            $(this).data('rootins-modal-opener', opener && opener.length ? opener : null);
-            $('body').addClass('rootins-modal-lock');
+            $(this).data('usha-derma-modal-opener', opener && opener.length ? opener : null);
+            $('body').addClass('usha-derma-modal-lock');
         })
-        .off('shown.bs.modal.rootinsModal', '.modal')
-        .on('shown.bs.modal.rootinsModal', '.modal', function () {
+        .off('shown.bs.modal.ushaDermaModal', '.modal')
+        .on('shown.bs.modal.ushaDermaModal', '.modal', function () {
             focusInitial(this);
         })
-        .off('keydown.rootinsModal', '.modal')
-        .on('keydown.rootinsModal', '.modal', trapFocus)
-        .off('hidden.bs.modal.rootinsModal', '.modal')
-        .on('hidden.bs.modal.rootinsModal', '.modal', function () {
-            const opener = $(this).data('rootins-modal-opener');
+        .off('keydown.ushaDermaModal', '.modal')
+        .on('keydown.ushaDermaModal', '.modal', trapFocus)
+        .off('hidden.bs.modal.ushaDermaModal', '.modal')
+        .on('hidden.bs.modal.ushaDermaModal', '.modal', function () {
+            const opener = $(this).data('usha-derma-modal-opener');
             if (!$('.modal.show').length) {
-                $('body').removeClass('rootins-modal-lock');
+                $('body').removeClass('usha-derma-modal-lock');
             }
             if (opener && opener.length && opener.is(':visible') && !opener.is(':disabled')) {
                 window.setTimeout(function () {
@@ -329,13 +329,13 @@ window.RootinsModal = (function () {
  *
  */
 
-window.RootinsPreloader = (function () {
+window.UshaDermaPreloader = (function () {
     let activeRequests = 0;
     let fallbackTimer = null;
 
     function render(visible) {
         $('.preloader').toggle(visible);
-        $('body').toggleClass('rootins-loading', visible);
+        $('body').toggleClass('usha-derma-loading', visible);
     }
 
     function armFallback() {
@@ -374,7 +374,7 @@ window.RootinsPreloader = (function () {
  * ajaxRequest() consumes this state and restores it from one completion path,
  * including validation, permission, timeout, abort, and parse failures.
  */
-const rootinsPendingFormSubmits = [];
+const ushaDermaPendingFormSubmits = [];
 
 document.addEventListener('submit', function (event) {
     const form = event.target;
@@ -392,23 +392,23 @@ document.addEventListener('submit', function (event) {
         };
     });
 
-    rootinsPendingFormSubmits.push({form: form, buttons: buttons, claimed: false, at: Date.now()});
+    ushaDermaPendingFormSubmits.push({form: form, buttons: buttons, claimed: false, at: Date.now()});
     window.setTimeout(function () {
-        const index = rootinsPendingFormSubmits.findIndex(function (entry) {
+        const index = ushaDermaPendingFormSubmits.findIndex(function (entry) {
             return entry.form === form && entry.at + 5000 < Date.now();
         });
         if (index !== -1) {
-            rootinsPendingFormSubmits.splice(index, 1);
+            ushaDermaPendingFormSubmits.splice(index, 1);
         }
     }, 5100);
 }, true);
 
-function rootinsRequestForm(options) {
+function ushaDermaRequestForm(options) {
     if (options && options.form) {
         const form = $(options.form).first();
         return form.length ? {
             form: form[0],
-            buttons: form.data('rootins-submit-snapshot') || Array.from(form.find(':submit')).map(function (button) {
+            buttons: form.data('usha-derma-submit-snapshot') || Array.from(form.find(':submit')).map(function (button) {
                 return {
                     element: button,
                     disabled: button.disabled,
@@ -420,8 +420,8 @@ function rootinsRequestForm(options) {
         } : null;
     }
 
-    for (let index = rootinsPendingFormSubmits.length - 1; index >= 0; index -= 1) {
-        const entry = rootinsPendingFormSubmits[index];
+    for (let index = ushaDermaPendingFormSubmits.length - 1; index >= 0; index -= 1) {
+        const entry = ushaDermaPendingFormSubmits[index];
         if (!entry.claimed && entry.at + 1500 >= Date.now()) {
             entry.claimed = true;
             return entry;
@@ -431,7 +431,7 @@ function rootinsRequestForm(options) {
     return null;
 }
 
-function rootinsRestoreFormState(state) {
+function ushaDermaRestoreFormState(state) {
     if (!state || !state.form) {
         return;
     }
@@ -451,13 +451,13 @@ function rootinsRestoreFormState(state) {
         }
     });
 
-    $(state.form).removeData('rootins-native-submitting');
-    $(state.form).removeData('rootins-submit-snapshot');
+    $(state.form).removeData('usha-derma-native-submitting');
+    $(state.form).removeData('usha-derma-submit-snapshot');
 }
 
-function rootinsCleanupAjaxRequest(formState, loaderVisible) {
+function ushaDermaCleanupAjaxRequest(formState, loaderVisible) {
     try {
-        rootinsRestoreFormState(formState);
+        ushaDermaRestoreFormState(formState);
     } finally {
         if (loaderVisible) {
             hide_loader();
@@ -469,33 +469,33 @@ function rootinsCleanupAjaxRequest(formState, loaderVisible) {
 }
 
 function show_loader() {
-    window.RootinsPreloader.show();
+    window.UshaDermaPreloader.show();
 }
 
 function hide_loader() {
-    window.RootinsPreloader.hide();
+    window.UshaDermaPreloader.hide();
 }
 
 $(document).ready(function () {
-    window.RootinsPreloader.reset();
+    window.UshaDermaPreloader.reset();
 });
 
-$(window).on('pageshow.rootinsPreloader load.rootinsPreloader', function () {
-    window.RootinsPreloader.reset();
+$(window).on('pageshow.ushaDermaPreloader load.ushaDermaPreloader', function () {
+    window.UshaDermaPreloader.reset();
 });
 
-$(document).on('submit.rootinsPreloader', 'form:not([data-no-global-loader])', function (event) {
+$(document).on('submit.ushaDermaPreloader', 'form:not([data-no-global-loader])', function (event) {
     if (event.isDefaultPrevented()) {
         return;
     }
 
     const form = $(this);
-    if (form.data('rootins-native-submitting')) {
+    if (form.data('usha-derma-native-submitting')) {
         event.preventDefault();
         return;
     }
 
-    form.data('rootins-native-submitting', true);
+    form.data('usha-derma-native-submitting', true);
     form.find(':submit').prop('disabled', true).attr('aria-busy', 'true');
     show_loader();
 });
@@ -524,7 +524,7 @@ function ajaxRequest(options)
     options = options || {};
     const userBeforeSend = options.beforeSend;
     const userComplete = options.complete;
-    const requestForm = rootinsRequestForm(options);
+    const requestForm = ushaDermaRequestForm(options);
     let loaderVisible = false;
     let formState = null;
     if (requestForm) {
@@ -550,12 +550,12 @@ function ajaxRequest(options)
                     const result = userBeforeSend.call(this, xhr, settings);
                     if (result === false) {
                         loaderVisible = false;
-                        rootinsCleanupAjaxRequest(formState, true);
+                        ushaDermaCleanupAjaxRequest(formState, true);
                     }
                     return result;
                 } catch (error) {
                     if (loaderVisible) {
-                        rootinsCleanupAjaxRequest(formState, true);
+                        ushaDermaCleanupAjaxRequest(formState, true);
                         loaderVisible = false;
                     }
                     throw error;
@@ -572,7 +572,7 @@ function ajaxRequest(options)
                     userComplete.call(this, xhr, status);
                 }
             } finally {
-                rootinsCleanupAjaxRequest(formState, loaderVisible);
+                ushaDermaCleanupAjaxRequest(formState, loaderVisible);
                 loaderVisible = false;
             }
         }
@@ -584,9 +584,9 @@ function ajaxRequest(options)
     return $.ajax(request);
 }
 
-function rootinsFetch(url, options) {
+function ushaDermaFetch(url, options) {
     options = options || {};
-    const requestForm = rootinsRequestForm(options);
+    const requestForm = ushaDermaRequestForm(options);
     const formState = requestForm ? {form: requestForm.form, buttons: requestForm.buttons} : null;
     const requestOptions = Object.assign({}, options);
     const timeout = Number(requestOptions.timeout || 30000);
@@ -610,7 +610,7 @@ function rootinsFetch(url, options) {
 
     return window.fetch(url, requestOptions).finally(function () {
         window.clearTimeout(timer);
-        rootinsRestoreFormState(formState);
+        ushaDermaRestoreFormState(formState);
         hide_loader();
     });
 }

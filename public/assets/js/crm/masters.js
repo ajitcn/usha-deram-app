@@ -1,4 +1,4 @@
-(function () { 'use strict'; if (window.rootinsCrmMastersBound) return; window.rootinsCrmMastersBound = true;
+(function () { 'use strict'; if (window.ushaDermaCrmMastersBound) return; window.ushaDermaCrmMastersBound = true;
   var modal=document.getElementById('crmMasterModal'), form=document.getElementById('crmMasterForm'); if(!modal||!form)return; var title=document.getElementById('crmMasterModalTitle'), submit=form.querySelector('button[type="submit"]');
   function errors(clear){form.querySelectorAll('.validation-error').forEach(function(n){n.textContent='';});form.querySelectorAll('.is-invalid').forEach(function(n){n.classList.remove('is-invalid');});if(clear) return;}
   function reset(){form.reset();document.getElementById('crmMasterId').value='';document.getElementById('crmMasterSort').value='0';title.textContent='Add '+document.querySelector('.crm-masters-page h1').textContent.replace(/s$/,'');form.action=form.action.replace(/\/update\/\d+|\/create$/,'/create');errors(true);}

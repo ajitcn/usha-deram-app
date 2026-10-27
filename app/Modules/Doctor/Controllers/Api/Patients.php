@@ -15,12 +15,12 @@ class Patients extends BaseController
             return $this->response->setStatusCode(405)->setJSON(['status' => false, 'msg' => 'Invalid request.']);
         }
         $token = trim((string) $this->request->getHeaderLine('Authorization'));
-        $expected = trim((string) env('ROOTINS_API_TOKEN', ''));
+        $expected = trim((string) env('USHA_DERMA_API_TOKEN', ''));
 
         if ($expected === '' || !hash_equals('Bearer ' . $expected, $token)) {
             return $this->response->setStatusCode(401)->setJSON(['status' => false, 'msg' => 'API authentication failed.']);
         }
-        $key = 'rootins-api-patient-' . hash('sha256', $expected);
+        $key = 'usha-derma-api-patient-' . hash('sha256', $expected);
         $attempts = (int) (cache()->get($key) ?? 0);
 
         if ($attempts >= 60) {

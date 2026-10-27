@@ -10,6 +10,7 @@ use Admin\Services\PatientRegistrationService;
 use App\Controllers\BaseController;
 use App\Services\LocationService;
 use App\Services\PatientScope;
+use App\Services\ConsultationFeePaymentService;
 use App\Services\Common\R2StorageLibrary;
 use CodeIgniter\HTTP\RedirectResponse;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -64,6 +65,8 @@ class Portal extends BaseController
         $appointmentPages = max(1, (int) ceil($appointmentTotal / $pageSize));
         $appointmentPage = min(max(1, (int) ($this->request->getGet('appointments_page') ?? 1)), $appointmentPages);
         $appointments = $appointmentQuery->orderBy('appointments.appointment_date', 'DESC')->orderBy('appointments.appointment_time', 'DESC')->limit($pageSize, ($appointmentPage - 1) * $pageSize)->get()->getResultArray();
+        $feeService = new ConsultationFeePaymentService();
+        $appointments = array_map(static function (array $appointment) use ($feeService, $clinicId, $patientId): array { $appointment['fee_summary'] = $feeService->summary((int) $appointment['id'], (int) $clinicId); return $appointment; }, $appointments);
         $doctors = $db->table('doctors')->select('id, first_name, last_name, doctor_code, qualification, online_booking')->where('clinic_id', $clinicId)->where('status', 1)->where('online_booking', 1)->orderBy('display_order')->orderBy('first_name')->get()->getResultArray();
         $visitQuery = $db->table('consultations')->select('consultations.consultation_number, consultations.consultation_date, consultations.consultation_time, consultations.chief_complaint, consultations.clinical_notes, consultations.diagnosis, consultations.treatment_plan, consultations.follow_up_date, consultations.status, doctors.first_name AS doctor_first_name, doctors.last_name AS doctor_last_name')->join('doctors', 'doctors.id = consultations.doctor_id')->where('consultations.patient_id', $patientId)->where('consultations.clinic_id', $clinicId)->where('doctors.clinic_id', $clinicId);
 
@@ -74,7 +77,7 @@ class Portal extends BaseController
         $visitPages = max(1, (int) ceil($visitTotal / $pageSize));
         $visitPage = min(max(1, (int) ($this->request->getGet('visits_page') ?? 1)), $visitPages);
         $visits = $visitQuery->orderBy('consultations.consultation_date', 'DESC')->limit($pageSize, ($visitPage - 1) * $pageSize)->get()->getResultArray();
-        $prescriptionQuery = $db->table('prescriptions')->select('prescriptions.id, prescriptions.prescription_number, prescriptions.prescription_date, prescriptions.notes, prescriptions.status')->where('patient_id', $patientId)->where('clinic_id', $clinicId);
+        $prescriptionQuery = $db->table('prescriptions')->select('prescriptions.id, prescriptions.prescription_number, prescriptions.prescription_date, prescriptions.medicine_duration, prescriptions.notes, prescriptions.status')->where('patient_id', $patientId)->where('clinic_id', $clinicId);
 
         if ($search !== '') {
             $prescriptionQuery->groupStart()->like('prescription_number', $search)->orLike('status', $search)->groupEnd();
@@ -86,7 +89,7 @@ class Portal extends BaseController
         $items = [];
 
         foreach ($prescriptions as $prescription) {
-            $items[(int) $prescription['id']] = $db->table('prescription_items')->where('prescription_id', $prescription['id'])->orderBy('id')->get()->getResultArray();
+            $items[(int) $prescription['id']] = $db->table('prescription_items')->select('prescription_items.*, prescription_items.duration AS medicine_duration')->where('prescription_id', $prescription['id'])->orderBy('id')->get()->getResultArray();
         }
         $invoiceQuery = $db->table('invoices')->select('invoice_number, currency, total, status, payment_status, created_at')->where('patient_id', $patientId)->where('clinic_id', $clinicId);
 
@@ -100,7 +103,7 @@ class Portal extends BaseController
         $orderStatus = trim((string) $this->request->getGet('order_status'));
         $paymentStatus = trim((string) $this->request->getGet('payment_status'));
         $deliveryStatus = trim((string) $this->request->getGet('delivery_status'));
-        $orderQuery = $db->table('medicine_orders AS orders')->select('orders.id, orders.order_number, orders.status, orders.payment_status, orders.delivery_status, orders.payment_provider, orders.payment_reference, orders.tracking_reference, orders.dispatched_at, orders.delivered_at, orders.created_at, orders.updated_at, prescriptions.prescription_number, prescriptions.prescription_date')->join('prescriptions', 'prescriptions.id = orders.prescription_id')->where('orders.patient_id', $patientId)->where('orders.clinic_id', $clinicId)->where('prescriptions.patient_id', $patientId)->where('prescriptions.clinic_id', $clinicId);
+        $orderQuery = $db->table('medicine_orders AS orders')->select('orders.id, orders.order_number, orders.status, orders.payment_status, orders.delivery_status, orders.payment_provider, orders.payment_reference, orders.tracking_reference, orders.dispatched_at, orders.delivered_at, orders.created_at, orders.updated_at, prescriptions.prescription_number, prescriptions.prescription_date, prescriptions.medicine_duration')->join('prescriptions', 'prescriptions.id = orders.prescription_id')->where('orders.patient_id', $patientId)->where('orders.clinic_id', $clinicId)->where('prescriptions.patient_id', $patientId)->where('prescriptions.clinic_id', $clinicId);
 
         if ($search !== '') {
             $orderQuery->groupStart()->like('orders.order_number', $search)->orLike('prescriptions.prescription_number', $search)->orLike('orders.payment_status', $search)->orLike('orders.delivery_status', $search)->orLike('orders.status', $search)->orLike('orders.tracking_reference', $search)->groupEnd();
@@ -124,7 +127,7 @@ class Portal extends BaseController
         $orderItems = [];
 
         foreach ($orders as $order) {
-            $orderItems[(int) $order['id']] = $db->table('medicine_order_items')->select('medicine_name, quantity')->where('order_id', (int) $order['id'])->orderBy('id', 'ASC')->get()->getResultArray();
+            $orderItems[(int) $order['id']] = $db->table('medicine_order_items AS order_items')->select('order_items.medicine_name, order_items.quantity, COALESCE(prescription_items.duration, order_items.duration) AS medicine_duration', false)->join('prescription_items', 'prescription_items.id = order_items.prescription_item_id', 'left')->where('order_items.order_id', (int) $order['id'])->orderBy('order_items.id', 'ASC')->get()->getResultArray();
         }
         $documentQuery = $this->documents->where('patient_id', $patientId);
 
@@ -156,6 +159,7 @@ class Portal extends BaseController
         $mobile = trim((string) $this->request->getPost('mobile_number'));
         $gender = trim((string) $this->request->getPost('gender'));
         $displayDateOfBirth = trim((string) $this->request->getPost('date_of_birth'));
+        $ageInput = trim((string) $this->request->getPost('age'));
         $postalCode = trim((string) $this->request->getPost('postal_code'));
         $address = trim((string) $this->request->getPost('address'));
         $manualCode = (string) $this->request->getPost('country_code_manual') === '1';
@@ -185,6 +189,10 @@ class Portal extends BaseController
 
         if ($displayDateOfBirth !== '' && $dateOfBirth === null) {
             $errors['date_of_birth'] = 'Enter a valid date of birth as dd-mm-yyyy.';
+        }
+
+        if ($ageInput !== '' && (! ctype_digit($ageInput) || (int) $ageInput > 130)) {
+            $errors['age'] = 'Age must be a whole number from 0 to 130.';
         }
 
         if (strlen($postalCode) > 20) {
@@ -228,6 +236,7 @@ class Portal extends BaseController
                 'mobile_normalized' => $mobile === '' ? null : preg_replace('/[^0-9]/', '', $mobile),
                 'gender' => $gender === '' ? null : $gender,
                 'date_of_birth' => $dateOfBirth,
+                'age' => $ageInput === '' ? null : (int) $ageInput,
                 'postal_code' => $postalCode === '' ? null : $postalCode,
                 'address' => $address === '' ? null : $address,
             ];

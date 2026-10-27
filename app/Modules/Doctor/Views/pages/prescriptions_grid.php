@@ -8,7 +8,7 @@
                 <div class="doctor-prescription-card-medicines"><span class="doctor-prescription-card-label">Medicines</span><strong><?= (int) $item['medicineCount'] ?></strong></div>
                 <div class="doctor-prescription-card-status"><span class="doctor-prescription-card-label">Status</span><span class="badge doctor-prescription-status-badge doctor-prescription-status-<?= esc($item['statusClass']) ?>" title="<?= esc($item['statusLabel']) ?>"><?= esc($item['statusLabel']) ?></span></div>
             </div>
-            <div class="doctor-prescription-card-actions"><?= view(DOCTOR_VIEW . 'pages/prescriptions_actions', $item + ['doctorCanViewPatients' => $doctorCanViewPatients, 'doctorCanViewClinical' => $doctorCanViewClinical]) ?></div>
+<div class="doctor-prescription-card-actions"><?= view(DOCTOR_VIEW . 'pages/prescriptions_actions', $item + ['doctorCanViewPatients' => $doctorCanViewPatients, 'doctorCanViewClinical' => $doctorCanViewClinical, 'doctorCanEditClinical' => $doctorCanEditClinical]) ?></div>
         </article>
     <?php endforeach; ?>
 </div>

@@ -12,7 +12,7 @@ final class AdminAppointmentListUiTest extends CIUnitTestCase
         $view = file_get_contents(ROOTPATH . 'app/Modules/Admin/Views/pages/appointment/index.php');
         $script = file_get_contents(ROOTPATH . 'public/assets/js/admin/appointment/appointment.js');
         $actionsScript = file_get_contents(ROOTPATH . 'public/assets/js/actions-menu.js');
-        $css = file_get_contents(ROOTPATH . 'public/assets/css/rootins-monochrome.css');
+        $css = file_get_contents(ROOTPATH . 'public/assets/css/usha-derma-monochrome.css');
 
         foreach (['doctors.doctor_code', 'AppointmentConsultationEligibility', 'consultation_eligible', 'canConsult', 'canBilling'] as $contract) {
             self::assertStringContainsString($contract, $controller);

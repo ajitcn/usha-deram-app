@@ -85,7 +85,7 @@ class CrmFollowUpWorkflowTest extends CIUnitTestCase
     public function testDetailsModalLifecycleSupportsCloseEscapeBackdropAndCleanup(): void
     {
         $script = $this->read('public/assets/js/admin/crm.js');
-        foreach (['hideCrmModal', 'showCrmModal', 'data-dismiss="modal"', "event.key !== 'Escape'", 'removeCrmBackdrops', 'rootins-modal-lock', 'stopImmediatePropagation'] as $needle) {
+        foreach (['hideCrmModal', 'showCrmModal', 'data-dismiss="modal"', "event.key !== 'Escape'", 'removeCrmBackdrops', 'usha-derma-modal-lock', 'stopImmediatePropagation'] as $needle) {
             self::assertStringContainsString($needle, $script);
         }
     }

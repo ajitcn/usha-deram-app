@@ -46,10 +46,14 @@ $patientName = trim(implode(' ', array_filter([
                         <dd><?= esc($patient['gender'] ?? 'Not recorded') ?></dd>
                         <dt>Source</dt>
                         <dd><span class="badge <?= esc(patient_source_badge_class($patient['source_type'] ?? null)) ?>"><?= esc(patient_source_label($patient['source_type'] ?? null)) ?></span></dd>
+                        <dt>Reference Number</dt>
+                        <dd><?= esc(trim((string) ($patient['source_reference'] ?? '')) ?: 'Not recorded') ?></dd>
                         <dt>Status</dt>
                         <dd><?= (int) $patient['status'] === 1 ? 'Active' : 'Inactive' ?></dd>
                         <dt>Date of birth</dt>
-                        <dd><?= esc(rootins_format_date($patient['date_of_birth'] ?? '') ?: 'Not recorded') ?></dd>
+                        <dd><?= esc(usha_derma_format_date($patient['date_of_birth'] ?? '') ?: 'Not recorded') ?></dd>
+                        <dt>Age</dt>
+                        <dd><?php $displayAge = usha_derma_patient_age($patient['age'] ?? null, $patient['date_of_birth'] ?? null); ?><?= $displayAge !== null ? esc($displayAge . ' years') : 'Not recorded' ?></dd>
                         <dt>Location</dt>
                         <dd>
                             <?= esc($patient['locality_name'] ?? $patient['city_name'] ?? $patient['state_name'] ?? $patient['country_name'] ?? 'Not recorded') ?>
@@ -79,7 +83,7 @@ $patientName = trim(implode(' ', array_filter([
                                 <tr>
                                     <td><?= esc($item['appointment_number']) ?></td>
                                     <td>
-                                        <?= esc(rootins_format_date($item['appointment_date'] ?? '')) ?>
+                                        <?= esc(usha_derma_format_date($item['appointment_date'] ?? '')) ?>
                                         <?= esc(substr((string) $item['appointment_time'], 0, 5)) ?>
                                     </td>
                                     <td><?= esc(ucwords(str_replace('_', ' ', $item['appointment_type']))) ?></td>
@@ -109,7 +113,7 @@ $patientName = trim(implode(' ', array_filter([
                         <div class="border-bottom pb-2 mb-2">
                             <strong><?= esc($item['consultation_number']) ?></strong>
                             <div class="small text-muted">
-                                <?= esc(rootins_format_date($item['consultation_date'] ?? '')) ?> · <?= esc($item['status']) ?>
+                                <?= esc(usha_derma_format_date($item['consultation_date'] ?? '')) ?> · <?= esc($item['status']) ?>
                             </div>
                             <div><?= nl2br(esc($item['diagnosis'] ?? $item['clinical_notes'] ?? 'No notes')) ?></div>
                         </div>
@@ -131,7 +135,7 @@ $patientName = trim(implode(' ', array_filter([
                         <div class="border-bottom pb-2 mb-2">
                             <strong><?= esc($item['prescription_number']) ?></strong>
                             <div class="small text-muted">
-                                <?= esc(rootins_format_date($item['prescription_date'] ?? '')) ?> · <?= esc($item['status']) ?>
+                                <?= esc(usha_derma_format_date($item['prescription_date'] ?? '')) ?> · <?= esc($item['status']) ?>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -209,6 +213,12 @@ $patientName = trim(implode(' ', array_filter([
                             <label for="edit-patient-dob">Date of birth <span class="text-danger" aria-hidden="true">*</span><span class="sr-only">required</span></label>
                             <input id="edit-patient-dob" class="form-control datepicker" type="text" name="date_of_birth" data-submit-display-date="true" placeholder="dd-mm-yyyy" autocomplete="off" value="<?= esc(! empty($patient['date_of_birth']) ? date('d-m-Y', strtotime((string) $patient['date_of_birth'])) : '') ?>" required>
                             <div class="validation-error" id="date_of_birthErr"></div>
+                        </div>
+                        <div class="form-group col-md-4 col-12">
+                            <label for="edit-patient-age">Age <small class="text-muted">(optional)</small></label>
+                            <input id="edit-patient-age" class="form-control" type="number" name="age" min="0" max="130" step="1" inputmode="numeric" value="<?= esc((string) ($patient['age'] ?? '')) ?>">
+                            <div class="form-text text-muted">Leave blank to calculate from Date of Birth.</div>
+                            <div class="validation-error" id="ageErr"></div>
                         </div>
                         <div class="col-12 doctor-patient-location-slot" aria-hidden="true"></div>
                         <div class="form-group col-md-4 col-12">

@@ -4,6 +4,7 @@
 <?php
 $doctorCanViewPatients = in_array('patient.view', session('permissions') ?? [], true);
 $doctorCanViewClinical = in_array('consultation.view', session('permissions') ?? [], true);
+$doctorCanEditClinical = in_array('consultation.edit', session('permissions') ?? [], true);
 $requestedPrescriptionView = (string) ($filters['view'] ?? 'list');
 $prescriptionView = in_array($requestedPrescriptionView, ['list', 'grid'], true) ? $requestedPrescriptionView : 'list';
 $prescriptionContext = static function (array $item): array {
@@ -21,8 +22,11 @@ $prescriptionContext = static function (array $item): array {
     $status = trim((string) ($item['status'] ?? '')) ?: 'unknown';
 
     return [
+        'canEditPrescription' => in_array($status, ['draft', 'submitted', 'clarification_requested'], true) && (int) ($item['order_count'] ?? 0) === 0,
         'prescriptionId' => $prescriptionId,
         'patientId' => $patientId,
+        'appointmentId' => max(0, (int) ($item['consultation_appointment_id'] ?? 0)),
+        'canEditConsultation' => (bool) ($item['can_edit_consultation'] ?? false),
         'patientName' => $patientName,
         'patientReference' => $patientReference,
         'mobile' => trim((string) ($item['patient_mobile_display'] ?? '')) ?: 'Mobile not recorded',
@@ -107,7 +111,7 @@ $prescriptionContext = static function (array $item): array {
         </div>
         <div class="doctor-prescription-records" data-prescription-view-container data-view="<?= esc($prescriptionView) ?>" role="list" aria-label="Prescriptions">
             <?php if ($prescriptions !== []): ?>
-                <?= view(DOCTOR_VIEW . 'pages/prescriptions_' . $prescriptionView, ['prescriptions' => $prescriptions, 'prescriptionContext' => $prescriptionContext, 'doctorCanViewPatients' => $doctorCanViewPatients, 'doctorCanViewClinical' => $doctorCanViewClinical]) ?>
+<?= view(DOCTOR_VIEW . 'pages/prescriptions_' . $prescriptionView, ['prescriptions' => $prescriptions, 'prescriptionContext' => $prescriptionContext, 'doctorCanViewPatients' => $doctorCanViewPatients, 'doctorCanViewClinical' => $doctorCanViewClinical, 'doctorCanEditClinical' => $doctorCanEditClinical]) ?>
             <?php else: ?>
                 <div class="empty-state doctor-prescription-empty-state" role="status" aria-live="polite">
                     <i class="bi bi-prescription2 d-block h3 mb-2" aria-hidden="true"></i>
@@ -174,14 +178,24 @@ $prescriptionContext = static function (array $item): array {
     <?php $patientReference = $patientReference !== '' ? $patientReference : '#' . (int) ($item['patient_id'] ?? 0); ?>
     <?php $prescriptionDate = trim((string) ($item['prescription_date'] ?? '')); ?>
     <?php $displayPrescriptionDate = $prescriptionDate !== '' ? date('d-m-Y', strtotime($prescriptionDate)) : '—'; ?>
-    <?php $medicineDuration = ''; ?>
-    <?php foreach (($items[$prescriptionId] ?? []) as $line): ?>
-        <?php $lineDuration = trim((string) ($line['duration'] ?? '') . ' ' . (string) ($line['duration_unit'] ?? '')); ?>
-        <?php if ($lineDuration !== ''): ?>
-            <?php $medicineDuration = $lineDuration; ?>
-            <?php break; ?>
-        <?php endif; ?>
-    <?php endforeach; ?>
+    <?php $displayPrescriptionDate = $prescriptionDate !== '' ? date('d-m-Y', strtotime($prescriptionDate)) : 'Date not recorded'; ?>
+    <?php $doctorName = trim((string) ($item['doctor_name'] ?? '')) ?: 'Doctor not recorded'; ?>
+    <?php $doctorQualification = trim((string) ($item['doctor_qualification'] ?? '')); ?>
+    <?php $doctorRegistrationNumber = trim((string) ($item['doctor_registration_number'] ?? '')); ?>
+    <?php $prescriptionStatus = ucwords(str_replace('_', ' ', trim((string) ($item['status'] ?? '')) ?: 'Unknown')); ?>
+    <?php $prescriptionStatusClass = preg_replace('/[^a-z0-9-]+/', '-', strtolower(str_replace('_', '-', trim((string) ($item['status'] ?? ''))))) ?: 'unknown'; ?>
+    <?php $diagnosis = trim((string) ($item['diagnosis'] ?? '')); ?>
+    <?php $clinicalNotes = trim((string) ($item['clinical_notes'] ?? '')); ?>
+    <?php $treatmentPlan = trim((string) ($item['treatment_plan'] ?? '')); ?>
+    <?php $prescriptionNotes = trim((string) ($item['notes'] ?? '')); ?>
+    <?php $followUpDate = trim((string) ($item['follow_up_date'] ?? '')); ?>
+    <?php $followUpTime = trim((string) ($item['follow_up_time'] ?? '')); ?>
+    <?php $followUpRemarks = trim((string) ($item['follow_up_remarks'] ?? '')); ?>
+<?php $followUpTimestamp = $followUpDate !== '' ? strtotime($followUpDate) : false; ?>
+<?php $displayFollowUpDate = $followUpTimestamp !== false ? date('d-m-Y', $followUpTimestamp) : ''; ?>
+    <?php $formatMedicineDuration = static function (mixed $value, mixed $unit): string { $duration = trim((string) ($value ?? '')); $durationUnit = trim((string) ($unit ?? '')); if ($duration === '') { return $durationUnit !== '' ? $durationUnit : ''; } if ($durationUnit === '' || ! is_numeric($duration)) { return trim($duration . ' ' . $durationUnit); } $number = (float) $duration; $normalizedUnit = strtolower($durationUnit); $singular = rtrim($normalizedUnit, 's'); $labelUnit = $number === 1.0 ? $singular : ($singular === 'day' ? 'days' : ($singular === 'week' ? 'weeks' : ($singular === 'month' ? 'months' : $normalizedUnit))); return $duration . ' ' . $labelUnit; }; ?>
+    <?php $prescriptionDuration = trim((string) ($item['medicine_duration'] ?? '')); ?>
+    <?php $medicineDurationLabel = $prescriptionDuration === '' ? '' : $prescriptionDuration . ($prescriptionDuration === '1' ? ' day' : ' days'); ?>
     <div
         class="modal fade ri-scroll-modal doctor-prescription-print-modal doctor-prescription-detail-modal"
         id="<?= esc($detailId) ?>"
@@ -196,12 +210,13 @@ $prescriptionContext = static function (array $item): array {
                 <div class="modal-header">
                     <div class="doctor-prescription-modal-heading">
                         <h2 class="modal-title h5" id="<?= esc($detailId) ?>-title">
-                            Prescription <?= esc($item['prescription_number']) ?>
+                            Prescription Details
                         </h2>
                         <div class="doctor-prescription-modal-context" aria-label="Prescription summary">
                             <span><strong>Patient:</strong> <?= esc($patientName) ?></span>
                             <span><strong>Patient number:</strong> <?= esc($patientReference) ?></span>
                             <span><strong>Date:</strong> <?= esc($displayPrescriptionDate) ?></span>
+                            <span><strong>Status:</strong> <?= esc($prescriptionStatus) ?></span>
                         </div>
                     </div>
                     <button
@@ -245,7 +260,7 @@ $prescriptionContext = static function (array $item): array {
                                 </div>
                                 <div class="doctor-prescription-meta-item">
                                     <dt>Age</dt>
-                                    <dd><?= esc($item['patient_age'] ?? '—') ?></dd>
+                                    <dd><?= esc($item['patient_age'] ?? 'Not recorded') ?></dd>
                                 </div>
                                 <div class="doctor-prescription-meta-item">
                                     <dt>Patient number</dt>
@@ -253,18 +268,50 @@ $prescriptionContext = static function (array $item): array {
                                 </div>
                                 <div class="doctor-prescription-meta-item">
                                     <dt>Mobile</dt>
-                                    <dd><?= esc($item['patient_mobile_display'] ?? '—') ?></dd>
+                                    <dd><?= esc($item['patient_mobile_display'] ?? 'Mobile not recorded') ?></dd>
                                 </div>
                             </dl>
                         </div>
 
-                        <h3 class="doctor-prescription-section-title">Prescribed Medicines<?= $medicineDuration !== '' ? ' (for ' . esc($medicineDuration) . ')' : '' ?></h3>
+                        <h3 class="doctor-prescription-section-title">Prescription and Clinical Details</h3>
+                        <div class="doctor-prescription-info-grid">
+                            <div class="doctor-prescription-info-card">
+                                <span class="doctor-prescription-info-label">Doctor</span>
+                                <strong><?= esc($doctorName) ?></strong>
+                                <?php if ($doctorQualification !== ''): ?><span><?= esc($doctorQualification) ?></span><?php endif; ?>
+                                <?php if ($doctorRegistrationNumber !== ''): ?><span>Registration: <?= esc($doctorRegistrationNumber) ?></span><?php endif; ?>
+                            </div>
+                            <div class="doctor-prescription-info-card">
+                                <span class="doctor-prescription-info-label">Prescription status</span>
+                                <strong><span class="badge doctor-prescription-status-badge doctor-prescription-status-<?= esc($prescriptionStatusClass) ?>"><?= esc($prescriptionStatus) ?></span></strong>
+                                <?php if (($item['consultation_number'] ?? '') !== ''): ?><span>Consultation: <?= esc($item['consultation_number']) ?></span><?php endif; ?>
+                            </div>
+                        </div>
+                        <?php if ($diagnosis !== '' || $clinicalNotes !== '' || $treatmentPlan !== ''): ?>
+                            <div class="doctor-prescription-notes-grid">
+                                <?php if ($diagnosis !== ''): ?><div><span class="doctor-prescription-info-label">Diagnosis</span><p><?= nl2br(esc($diagnosis)) ?></p></div><?php endif; ?>
+                                <?php if ($clinicalNotes !== ''): ?><div><span class="doctor-prescription-info-label">Clinical notes</span><p><?= nl2br(esc($clinicalNotes)) ?></p></div><?php endif; ?>
+                                <?php if ($treatmentPlan !== ''): ?><div><span class="doctor-prescription-info-label">Treatment plan</span><p><?= nl2br(esc($treatmentPlan)) ?></p></div><?php endif; ?>
+                            </div>
+                        <?php else: ?>
+                            <p class="doctor-prescription-empty-note">No diagnosis or clinical notes were recorded.</p>
+                        <?php endif; ?>
+                        <?php if ($displayFollowUpDate !== '' || $followUpTime !== '' || $followUpRemarks !== '' || $prescriptionNotes !== ''): ?>
+                            <div class="doctor-prescription-follow-up">
+                                <span class="doctor-prescription-info-label">Follow-up and additional notes</span>
+                                <?php if ($displayFollowUpDate !== ''): ?><strong>Follow-up date: <?= esc($displayFollowUpDate) ?><?= $followUpTime !== '' ? ' · ' . esc(substr($followUpTime, 0, 5)) : '' ?></strong><?php endif; ?>
+                                <?php if ($followUpRemarks !== ''): ?><p><?= nl2br(esc($followUpRemarks)) ?></p><?php endif; ?>
+                                <?php if ($prescriptionNotes !== ''): ?><p><?= nl2br(esc($prescriptionNotes)) ?></p><?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if ($medicineDurationLabel !== ''): ?><div class="doctor-prescription-summary mt-3" aria-label="Duration Days"><span><b>Duration Days:</b> <?= esc($medicineDurationLabel) ?></span></div><?php endif; ?>
+                        <h3 class="doctor-prescription-section-title">Prescribed Medicines</h3>
                         <div class="table-responsive doctor-prescription-table-wrap">
                             <table class="table table-bordered table-sm doctor-prescription-table mb-0">
                                 <caption class="sr-only">Medicine items for prescription <?= esc($item['prescription_number']) ?></caption>
                                 <thead>
                                     <tr>
-                                        <th scope="col">#</th>
                                         <th scope="col">Medicine</th>
                                         <th scope="col">Duration</th>
                                         <th scope="col">Frequency</th>
@@ -276,15 +323,14 @@ $prescriptionContext = static function (array $item): array {
                                 <tbody>
                                     <?php if (($items[$prescriptionId] ?? []) === []): ?>
                                         <tr>
-                                            <td colspan="7" class="text-muted">No medicine items recorded.</td>
+                                            <td colspan="6" class="text-muted">No medicine items recorded.</td>
                                         </tr>
                                     <?php else: ?>
                                         <?php foreach ($items[$prescriptionId] as $lineNumber => $line): ?>
-                                            <?php $duration = trim((string) ($line['duration'] ?? '') . ' ' . (string) ($line['duration_unit'] ?? '')); ?>
                                             <tr>
-                                                <td data-label="#"><?= esc((string) ($lineNumber + 1)) ?></td>
+                                                <?php $lineDuration = trim((string) ($line['duration'] ?? '')); $lineDuration = $lineDuration !== '' ? $lineDuration : $prescriptionDuration; $lineDurationLabel = $lineDuration === '' ? '' : $lineDuration . ($lineDuration === '1' ? ' day' : ' days'); ?>
                                                 <td data-label="Medicine"><?= esc($line['medicine_catalog_name'] ?: ($line['medicine_name'] ?? '—')) ?></td>
-                                                <td data-label="Duration"><?= esc($duration !== '' ? $duration : '—') ?></td>
+                                                <td data-label="Duration"><?= esc($lineDurationLabel) ?></td>
                                                 <td data-label="Frequency"><?= esc($line['frequency'] ?? '—') ?></td>
                                                 <td data-label="Dose"><?= esc($line['dosage'] ?? '—') ?></td>
                                                 <td data-label="Intake"><?= esc($line['instructions'] ?? '—') ?></td>
@@ -323,8 +369,8 @@ $prescriptionContext = static function (array $item): array {
         $('[data-toggle="tooltip"]').tooltip();
 
         $('.ri-scroll-modal').on('shown.bs.modal', function () {
-            if (window.RootinsModal) {
-                window.RootinsModal.focus(this);
+            if (window.UshaDermaModal) {
+                window.UshaDermaModal.focus(this);
             }
         });
 

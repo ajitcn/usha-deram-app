@@ -38,8 +38,8 @@ class Consultation extends BaseAdminController
         $doctorId = (int) $this->request->getGet('doctor_id');
         $dateFromInput = trim((string) $this->request->getGet('date_from'));
         $dateToInput = trim((string) $this->request->getGet('date_to'));
-        $dateFrom = rootins_parse_date($dateFromInput);
-        $dateTo = rootins_parse_date($dateToInput);
+        $dateFrom = usha_derma_parse_date($dateFromInput);
+        $dateTo = usha_derma_parse_date($dateToInput);
         $pageSize = (int) $this->request->getGet('page_size');
         $pageSize = in_array($pageSize, [10, 15, 25, 50], true) ? $pageSize : 15;
         $query = $this->consultation->select('
@@ -88,7 +88,7 @@ class Consultation extends BaseAdminController
         }
         $consultations = $query->orderBy('consultations.consultation_date', 'DESC')->orderBy('consultations.consultation_time', 'DESC')->paginate($pageSize, 'consultations');
 
-        return view(ADMIN_VIEW . 'pages/consultation/index', ['consultations' => $consultations, 'pager' => $this->consultation->pager, 'filters' => ['search' => $search, 'status' => $status, 'clinic_id' => $clinicId ?: '', 'doctor_id' => $doctorId ?: '', 'date_from' => $dateFrom ? rootins_format_date($dateFrom) : $dateFromInput, 'date_to' => $dateTo ? rootins_format_date($dateTo) : $dateToInput, 'page_size' => $pageSize], 'patients' => $this->patient->select('id, registration_number, first_name, middle_name, last_name')->where('status', 1)->orderBy('first_name', 'ASC')->orderBy('last_name', 'ASC')->findAll(), 'doctors' => $this->doctor->select('id, first_name, last_name, doctor_code, clinic_id')->where('status', 1)->orderBy('first_name', 'ASC')->orderBy('last_name', 'ASC')->findAll(), 'clinics' => $this->clinic->dropdown(), 'appointments' => $this->appointment->select('appointments.id, appointments.appointment_number, appointments.patient_id, appointments.doctor_id, appointments.clinic_id, appointments.appointment_date, appointments.appointment_time')->whereNotIn('appointments.status', ['cancelled', 'no_show'])->orderBy('appointments.appointment_date', 'DESC')->orderBy('appointments.appointment_time', 'DESC')->findAll(), 'canCreate' => $this->hasPermission('consultation.create'), 'canEdit' => $this->hasPermission('consultation.edit'), 'canDelete' => $this->hasPermission('consultation.delete')]);
+        return view(ADMIN_VIEW . 'pages/consultation/index', ['consultations' => $consultations, 'pager' => $this->consultation->pager, 'filters' => ['search' => $search, 'status' => $status, 'clinic_id' => $clinicId ?: '', 'doctor_id' => $doctorId ?: '', 'date_from' => $dateFrom ? usha_derma_format_date($dateFrom) : $dateFromInput, 'date_to' => $dateTo ? usha_derma_format_date($dateTo) : $dateToInput, 'page_size' => $pageSize], 'patients' => $this->patient->select('id, registration_number, first_name, middle_name, last_name')->where('status', 1)->orderBy('first_name', 'ASC')->orderBy('last_name', 'ASC')->findAll(), 'doctors' => $this->doctor->select('id, first_name, last_name, doctor_code, clinic_id')->where('status', 1)->orderBy('first_name', 'ASC')->orderBy('last_name', 'ASC')->findAll(), 'clinics' => $this->clinic->dropdown(), 'appointments' => $this->appointment->select('appointments.id, appointments.appointment_number, appointments.patient_id, appointments.doctor_id, appointments.clinic_id, appointments.appointment_date, appointments.appointment_time')->whereNotIn('appointments.status', ['cancelled', 'no_show'])->orderBy('appointments.appointment_date', 'DESC')->orderBy('appointments.appointment_time', 'DESC')->findAll(), 'canCreate' => $this->hasPermission('consultation.create'), 'canEdit' => $this->hasPermission('consultation.edit'), 'canDelete' => $this->hasPermission('consultation.delete')]);
     }
 
     public function view(int $id)
@@ -237,10 +237,10 @@ class Consultation extends BaseAdminController
         }
 
         $errors = [];
-        if (rootins_parse_date($this->request->getPost('consultation_date')) === null) {
+        if (usha_derma_parse_date($this->request->getPost('consultation_date')) === null) {
             $errors['consultation_date'] = 'Enter a valid consultation date as dd-mm-yyyy.';
         }
-        if (trim((string) $this->request->getPost('follow_up_date')) !== '' && rootins_parse_date($this->request->getPost('follow_up_date')) === null) {
+        if (trim((string) $this->request->getPost('follow_up_date')) !== '' && usha_derma_parse_date($this->request->getPost('follow_up_date')) === null) {
             $errors['follow_up_date'] = 'Enter a valid follow-up date as dd-mm-yyyy.';
         }
 
@@ -289,7 +289,7 @@ class Consultation extends BaseAdminController
 
     private function consultationData(): array
     {
-        return ['patient_id' => (int) $this->request->getPost('patient_id'), 'doctor_id' => (int) $this->request->getPost('doctor_id'), 'clinic_id' => (int) $this->request->getPost('clinic_id'), 'appointment_id' => $this->nullableInteger('appointment_id'), 'consultation_date' => rootins_parse_date($this->request->getPost('consultation_date')) ?? '', 'consultation_time' => $this->nullableString('consultation_time'), 'chief_complaint' => $this->nullableString('chief_complaint'), 'clinical_notes' => $this->nullableString('clinical_notes'), 'diagnosis' => $this->nullableString('diagnosis'), 'treatment_plan' => $this->nullableString('treatment_plan'), 'diagnostic_tests' => $this->nullableString('diagnostic_tests'), 'diet_plan' => $this->nullableString('diet_plan'), 'follow_up_date' => rootins_parse_date($this->request->getPost('follow_up_date')), 'status' => (string) $this->request->getPost('status')];
+        return ['patient_id' => (int) $this->request->getPost('patient_id'), 'doctor_id' => (int) $this->request->getPost('doctor_id'), 'clinic_id' => (int) $this->request->getPost('clinic_id'), 'appointment_id' => $this->nullableInteger('appointment_id'), 'consultation_date' => usha_derma_parse_date($this->request->getPost('consultation_date')) ?? '', 'consultation_time' => $this->nullableString('consultation_time'), 'chief_complaint' => $this->nullableString('chief_complaint'), 'clinical_notes' => $this->nullableString('clinical_notes'), 'diagnosis' => $this->nullableString('diagnosis'), 'treatment_plan' => $this->nullableString('treatment_plan'), 'diagnostic_tests' => $this->nullableString('diagnostic_tests'), 'diet_plan' => $this->nullableString('diet_plan'), 'follow_up_date' => usha_derma_parse_date($this->request->getPost('follow_up_date')), 'status' => (string) $this->request->getPost('status')];
     }
 
     private function consultationDetails(int $id): ?array

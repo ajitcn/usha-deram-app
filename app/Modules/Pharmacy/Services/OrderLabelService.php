@@ -50,6 +50,7 @@ final class OrderLabelService
             'patient_states.name AS patient_state',
             'patient_cities.name AS patient_city',
             'prescriptions.prescription_number',
+            'prescriptions.medicine_duration',
         ];
 
         $hasLocality = $db->fieldExists('locality_id', 'patients') && $db->tableExists('localities');
@@ -105,6 +106,7 @@ final class OrderLabelService
 
         $itemSelect = [
             'items.medicine_name',
+            'COALESCE(prescription_items.duration, items.duration) AS medicine_duration',
             'items.quantity',
             'items.dosage',
             'items.frequency',
@@ -114,6 +116,7 @@ final class OrderLabelService
         $itemQuery = $db->table('medicine_order_items AS items');
 
         $itemQuery->join('medicines', 'medicines.id = items.medicine_id', 'left');
+        $itemQuery->join('prescription_items', 'prescription_items.id = items.prescription_item_id', 'left');
 
         foreach (['strength', 'dosage_form', 'unit'] as $medicineField) {
             if ($db->fieldExists($medicineField, 'medicines')) {
@@ -163,6 +166,7 @@ final class OrderLabelService
             $medicineLabels[] = [
                 'clinic_name' => (string) ($order['clinic_name'] ?? 'Clinic'),
                 'medicine_name' => (string) ($item['medicine_name'] ?? 'Medicine not recorded'),
+                'medicine_duration' => trim((string) ($item['medicine_duration'] ?? '')) ?: null,
                 'strength' => $strength,
                 'form' => $form,
                 'unit' => $unit,

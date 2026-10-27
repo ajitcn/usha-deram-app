@@ -58,8 +58,8 @@ class Patient extends BaseAdminController
         }
 
         if ($sourceType === 'unknown') {
-            $query->groupStart()->where('patients.source_type IS NULL', null, false)->orWhereNotIn('patients.source_type', ['self', 'shopify'])->groupEnd();
-        } elseif (in_array($sourceType, ['self', 'shopify'], true)) {
+            $query->groupStart()->where('patients.source_type IS NULL', null, false)->orWhereNotIn('patients.source_type', ['self', 'core_api', 'lead'])->groupEnd();
+        } elseif (in_array($sourceType, ['self', 'core_api', 'lead'], true)) {
             $query->where('patients.source_type', $sourceType);
         }
 
@@ -333,7 +333,7 @@ class Patient extends BaseAdminController
         if (!$this->validate($rules)) {
             return ['status' => false, 'errors' => $this->validator->getErrors()];
         }
-        if (trim((string) $this->request->getPost('date_of_birth')) !== '' && rootins_parse_date($this->request->getPost('date_of_birth')) === null) {
+        if (trim((string) $this->request->getPost('date_of_birth')) !== '' && usha_derma_parse_date($this->request->getPost('date_of_birth')) === null) {
             return ['status' => false, 'errors' => ['date_of_birth' => 'Enter a valid date of birth as dd-mm-yyyy.']];
         }
         $country = $this->telephoneCodeInput();
@@ -401,7 +401,7 @@ class Patient extends BaseAdminController
         if (!$this->validate($rules)) {
             return ['status' => false, 'errors' => $this->validator->getErrors()];
         }
-        if (rootins_parse_date($this->request->getPost('date_of_birth')) === null) {
+        if (usha_derma_parse_date($this->request->getPost('date_of_birth')) === null) {
             return ['status' => false, 'errors' => ['date_of_birth' => 'Enter a valid date of birth as dd-mm-yyyy.']];
         }
         $countryCode = $this->telephoneCodeInput();
@@ -467,7 +467,7 @@ class Patient extends BaseAdminController
             }
 
             $appointmentDateInput = trim((string) $this->request->getPost('appointment_date'));
-            $appointmentDate = rootins_parse_date($appointmentDateInput);
+            $appointmentDate = usha_derma_parse_date($appointmentDateInput);
             $appointmentTime = trim((string) $this->request->getPost('appointment_time'));
             $doctorId = (int) $this->request->getPost('appointment_doctor_id');
             $serviceId = (int) $this->request->getPost('appointment_service_id');
@@ -505,13 +505,13 @@ class Patient extends BaseAdminController
     private function getRegistrationData(): array
     {
         $country = $this->telephoneCodeInput();
-        $dateOfBirth = rootins_parse_date($this->request->getPost('date_of_birth'));
+        $dateOfBirth = usha_derma_parse_date($this->request->getPost('date_of_birth'));
 
         $data = ['clinic_id' => (int) $this->request->getPost('clinic_id'), 'first_name' => trim((string) $this->request->getPost('first_name')), 'middle_name' => $this->nullableString('middle_name'), 'last_name' => trim((string) $this->request->getPost('last_name')), 'gender' => $this->nullableString('gender'), 'date_of_birth' => $dateOfBirth, 'email' => trim((string) $this->request->getPost('email')), 'country_code_id' => $country['country_id'] ?? null, 'telephone_country_code_id' => $this->request->getPost('country_code_manual') === '1' ? null : ($country['id'] ?? null), 'country_code' => $this->nullableString('country_code'), 'telephone_country_name' => $this->request->getPost('country_code_manual') === '1' ? $this->nullableString('telephone_country_name') : null, 'mobile_normalized' => preg_replace('/[^0-9]/', '', (string) $this->request->getPost('mobile_number')), 'mobile_number' => trim((string) $this->request->getPost('mobile_number')), 'address' => $this->nullableString('address'), 'country_id' => $this->nullableInteger('country_id'), 'state_id' => $this->nullableInteger('state_id'), 'city_id' => $this->nullableInteger('city_id'), 'locality_id' => $this->nullableInteger('locality_id'), 'country_name' => $this->nullableString('country_name'), 'state_name' => $this->nullableString('state_name'), 'city_name' => $this->nullableString('city_name'), 'locality_name' => $this->nullableString('locality_name'), 'postal_code' => $this->nullableString('postal_code'), 'status' => 1];
 
         if ((string) $this->request->getPost('create_appointment_now') === '1') {
             $service = (new ServiceModel())->forScope((int) $data['clinic_id'])->where('id', (int) $this->request->getPost('appointment_service_id'))->where('status', 1)->first();
-            $data['_appointment'] = ['doctor_id' => (int) $this->request->getPost('appointment_doctor_id'), 'appointment_date' => (string) (rootins_parse_date($this->request->getPost('appointment_date')) ?? ''), 'appointment_time' => trim((string) $this->request->getPost('appointment_time')), 'service_name' => (string) ($service['name'] ?? ''), 'appointment_type' => 'in_person', 'status' => 'scheduled', 'created_by_type' => 'user', 'booking_source' => 'admin', 'reason' => $this->nullableString('appointment_reason')];
+            $data['_appointment'] = ['doctor_id' => (int) $this->request->getPost('appointment_doctor_id'), 'appointment_date' => (string) (usha_derma_parse_date($this->request->getPost('appointment_date')) ?? ''), 'appointment_time' => trim((string) $this->request->getPost('appointment_time')), 'service_name' => (string) ($service['name'] ?? ''), 'appointment_type' => 'in_person', 'status' => 'scheduled', 'created_by_type' => 'user', 'booking_source' => 'admin', 'reason' => $this->nullableString('appointment_reason')];
         }
 
         return $data;
@@ -520,7 +520,7 @@ class Patient extends BaseAdminController
     private function getPatientData(): array
     {
         $country = $this->telephoneCodeInput();
-        $dateOfBirth = rootins_parse_date($this->request->getPost('date_of_birth'));
+        $dateOfBirth = usha_derma_parse_date($this->request->getPost('date_of_birth'));
 
         return ['clinic_id' => $this->nullableInteger('clinic_id'), 'first_name' => trim((string) $this->request->getPost('first_name')), 'middle_name' => $this->nullableString('middle_name'), 'last_name' => trim((string) $this->request->getPost('last_name')), 'gender' => $this->nullableString('gender'), 'date_of_birth' => $dateOfBirth, 'email' => $this->nullableString('email'), 'country_code_id' => $country['country_id'] ?? null, 'telephone_country_code_id' => $this->request->getPost('country_code_manual') === '1' ? null : ($country['id'] ?? null), 'country_code' => $this->nullableString('country_code'), 'telephone_country_name' => $this->request->getPost('country_code_manual') === '1' ? $this->nullableString('telephone_country_name') : null, 'mobile_normalized' => preg_replace('/[^0-9]/', '', (string) $this->request->getPost('mobile_number')), 'mobile_number' => $this->nullableString('mobile_number'), 'address' => $this->nullableString('address'), 'country_id' => $this->nullableInteger('country_id'), 'state_id' => $this->nullableInteger('state_id'), 'city_id' => $this->nullableInteger('city_id'), 'locality_id' => $this->nullableInteger('locality_id'), 'country_name' => $this->nullableString('country_name'), 'state_name' => $this->nullableString('state_name'), 'city_name' => $this->nullableString('city_name'), 'locality_name' => $this->nullableString('locality_name'), 'postal_code' => $this->nullableString('postal_code'), 'status' => (int) $this->request->getPost('status')];
     }

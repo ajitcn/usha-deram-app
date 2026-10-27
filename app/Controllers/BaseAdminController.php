@@ -52,6 +52,7 @@ abstract class BaseAdminController extends BaseController
 
             exit;
         }
+        $this->auth->refreshAuthorizationSession();
         // Session Data
         $this->user = session('user') ?? [];
         $this->roles = session('roles') ?? [];

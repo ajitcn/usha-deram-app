@@ -44,6 +44,7 @@
         var clinic = <?= json_encode($clinic, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
         var activePrescription = null;
         var escapeHtml = function (value) { return $('<div>').text(value == null ? '' : value).html(); };
+        $(document).on('shown.bs.modal', '#patient-prescription-detail-modal', function () { var modal = $(this); modal.find('table tr').each(function () { $(this).find('th,td').eq(1).remove(); }); var values = (activePrescription && activePrescription.items || []).map(function (item) { var value = item.medicine_duration == null ? '' : String(item.medicine_duration).trim(); return value === '' ? '' : value + (value === '1' ? ' day' : ' days'); }).filter(Boolean).filter(function (value, index, all) { return all.indexOf(value) === index; }); var summary = values.length === 1 ? values[0] : (values.length > 1 ? 'Varies by medicine' : 'Not specified'); modal.find('.patient-modal-section').eq(1).prepend('<div class="patient-prescription-summary"><strong>Prescription Summary</strong><span>Duration Days: ' + escapeHtml(summary) + '</span></div>'); });
 
         $('.patient-date-filter').datepicker({ format: 'dd-mm-yyyy', autoclose: true, todayHighlight: true, orientation: 'bottom auto', container: '.patient-prescriptions-page' });
 
@@ -61,11 +62,13 @@
             }
 
             activePrescription = prescription;
+            prescription.items = (prescription.items || []).map(function (item) { if (item.medicine_duration == null || String(item.medicine_duration).trim() === '') item.medicine_duration = prescription.medicine_duration; return item; });
             var medicines = (prescription.items || []).map(function (item) {
-                var duration = [item.duration || '', item.duration_unit || ''].join(' ').trim() || '—';
+                var durationValue = item.medicine_duration == null ? '' : String(item.medicine_duration).trim();
+                var duration = durationValue === '' ? 'Not specified' : durationValue + (durationValue === '1' ? ' day' : ' days');
                 var note = item.notes || item.instructions || '—';
 
-                return '<tr><td data-label="Medicine">' + escapeHtml(item.medicine_name || 'Medicine unavailable') + '</td><td data-label="Duration">' + escapeHtml(duration) + '</td><td data-label="Frequency">' + escapeHtml(item.frequency || '—') + '</td><td data-label="Dose">' + escapeHtml(item.dosage || '—') + '</td><td data-label="Intake">' + escapeHtml(item.instructions || '—') + '</td><td data-label="Note">' + escapeHtml(note) + '</td></tr>';
+                return '<tr><td data-label="Medicine">' + escapeHtml(item.medicine_name || 'Medicine unavailable') + '</td><td data-label="Frequency">' + escapeHtml(item.frequency || '—') + '</td><td data-label="Dose">' + escapeHtml(item.dosage || '—') + '</td><td data-label="Intake">' + escapeHtml(item.instructions || '—') + '</td><td data-label="Note">' + escapeHtml(note) + '</td></tr>';
             }).join('');
 
             $('#patient-prescription-detail-title').text('Prescription Details · ' + (prescription.prescription_number || '—'));
@@ -73,15 +76,31 @@
             printButton.prop('disabled', false);
         });
 
+        $(document).on('shown.bs.modal', '#patient-prescription-detail-modal', function () { var modal = $(this); var timer = window.setInterval(function () { if (! activePrescription || ! modal.find('table').length) return; window.clearInterval(timer); modal.find('table tr').each(function () { $(this).find('th,td').eq(1).remove(); }); var values = (activePrescription.items || []).map(function (item) { var value = item.medicine_duration == null ? '' : String(item.medicine_duration).trim(); return value === '' ? '' : value + (value === '1' ? ' day' : ' days'); }).filter(Boolean).filter(function (value, index, all) { return all.indexOf(value) === index; }); var summary = values.length === 1 ? values[0] : (values.length > 1 ? 'Varies by medicine' : 'Not specified'); if (! modal.find('.patient-prescription-summary').length) modal.find('.patient-modal-section').eq(1).prepend('<div class="patient-prescription-summary"><strong>Prescription Summary</strong><span>Duration Days: ' + escapeHtml(summary) + '</span></div>'); }, 100); window.setTimeout(function () { window.clearInterval(timer); }, 3000); });
+        $(document).on('shown.bs.modal.patientPrescriptionDuration', '#patient-prescription-detail-modal', function () {
+            var modal = $(this);
+            var items = (activePrescription && activePrescription.items) || [];
+            var values = items.map(function (item) { var value = item.medicine_duration == null ? '' : String(item.medicine_duration).trim(); return value === '' ? '' : value + (value === '1' ? ' day' : ' days'); }).filter(Boolean);
+            modal.find('.patient-prescription-summary').remove();
+            if (values.length) modal.find('.patient-modal-section').eq(1).prepend('<div class="patient-prescription-summary"><strong>Prescription Summary</strong><span>Duration Days: ' + escapeHtml(values.filter(function (value, index, all) { return all.indexOf(value) === index; }).length === 1 ? values[0] : 'Varies by medicine') + '</span></div>');
+            var table = modal.find('table').first();
+            if (!table.length || table.find('thead th').eq(1).text().trim() === 'Duration') return;
+            table.find('thead tr').each(function () { $('<th>').text('Duration').insertAfter($(this).find('th').eq(0)); });
+            table.find('tbody tr').each(function (index) { var item = items[index] || {}; var value = item.medicine_duration == null ? '' : String(item.medicine_duration).trim(); var label = value === '' ? '' : value + (value === '1' ? ' day' : ' days'); $('<td>').text(label).insertAfter($(this).find('td').eq(0)); });
+        });
+
         $('#patient-prescription-print').on('click', function () {
             if (! activePrescription) return;
 
-            var rows = (activePrescription.items || []).map(function (item) { return '<tr><td>' + escapeHtml(item.medicine_name || 'Medicine unavailable') + '</td><td>' + escapeHtml([item.duration || '', item.duration_unit || ''].join(' ').trim() || '—') + '</td><td>' + escapeHtml(item.frequency || '—') + '</td><td>' + escapeHtml(item.dosage || '—') + '</td><td>' + escapeHtml(item.instructions || '—') + '</td><td>' + escapeHtml(item.notes || item.instructions || '—') + '</td></tr>'; }).join('');
+            var rows = (activePrescription.items || []).map(function (item) { var duration = item.medicine_duration == null || String(item.medicine_duration).trim() === '' ? 'Not specified' : String(item.medicine_duration).trim(); return '<tr><td>' + escapeHtml(item.medicine_name || 'Medicine unavailable') + '</td><td><strong>Duration Days:</strong> ' + escapeHtml(duration) + '</td><td>' + escapeHtml(item.frequency || '—') + '</td><td>' + escapeHtml(item.dosage || '—') + '</td><td>' + escapeHtml(item.instructions || '—') + '</td><td>' + escapeHtml(item.notes || item.instructions || '—') + '</td></tr>'; }).join('');
+            rows = rows.replace(/>Not specified</g, '><');
+            var printDurationValues = (activePrescription.items || []).map(function (item) { var value = item.medicine_duration == null ? '' : String(item.medicine_duration).trim(); return value === '' ? '' : value + (value === '1' ? ' day' : ' days'); }).filter(Boolean).filter(function (value, index, all) { return all.indexOf(value) === index; });
+            var printDurationSummary = printDurationValues.length === 1 ? printDurationValues[0] : (printDurationValues.length > 1 ? 'Varies by medicine' : 'Not specified');
             var printWindow = window.open('', '_blank', 'width=980,height=760');
 
             if (! printWindow) return;
 
-            var printMarkup = '<!doctype html><html><head><meta charset="utf-8"><title>' + escapeHtml(activePrescription.prescription_number) + '</title><style>body{font:12px Arial,sans-serif;color:#1f2940;padding:24px}h1{font-size:20px}h2{font-size:14px;margin-top:20px}table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{padding:7px;border:1px solid #ccd3df;text-align:left;vertical-align:top;overflow-wrap:anywhere}th{background:#f0f3f8}.meta{color:#5e6b82;margin:4px 0}@media print{body{padding:0}table{page-break-inside:auto}tr{page-break-inside:avoid;page-break-after:auto}}</style></head><body><h1>Prescription ' + escapeHtml(activePrescription.prescription_number) + '</h1><p class="meta">Patient: ' + escapeHtml((activePrescription.patient_first_name || '') + ' ' + (activePrescription.patient_last_name || '')) + ' · ' + escapeHtml(activePrescription.registration_number || '—') + '</p><p class="meta">Doctor: Dr. ' + escapeHtml((activePrescription.doctor_first_name || '') + ' ' + (activePrescription.doctor_last_name || '')) + ' · Date: ' + escapeHtml(activePrescription.prescription_date_display || '—') + ' · Status: ' + escapeHtml(activePrescription.status_label || '—') + '</p><h2>Medicines</h2><table><thead><tr><th>Medicine</th><th>Duration</th><th>Frequency</th><th>Dose</th><th>Intake</th><th>Note</th></tr></thead><tbody>' + rows + '</tbody></table></body></html>';
+            var printMarkup = '<!doctype html><html><head><meta charset="utf-8"><title>' + escapeHtml(activePrescription.prescription_number) + '</title><style>body{font:12px Arial,sans-serif;color:#1f2940;padding:24px}.table-responsive{max-width:100%;overflow-x:auto;overflow-y:visible}h1{font-size:20px}h2{font-size:14px;margin-top:20px}table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{padding:7px;border:1px solid #ccd3df;text-align:left;vertical-align:top;overflow-wrap:anywhere}th{background:#f0f3f8}.meta{color:#5e6b82;margin:4px 0}@media print{body{padding:0}table{page-break-inside:auto}tr{page-break-inside:avoid;page-break-after:auto}}</style></head><body><h1>Prescription ' + escapeHtml(activePrescription.prescription_number) + '</h1><p class="meta">Patient: ' + escapeHtml((activePrescription.patient_first_name || '') + ' ' + (activePrescription.patient_last_name || '')) + ' · ' + escapeHtml(activePrescription.registration_number || '—') + '</p><p class="meta">Doctor: Dr. ' + escapeHtml((activePrescription.doctor_first_name || '') + ' ' + (activePrescription.doctor_last_name || '')) + ' · Date: ' + escapeHtml(activePrescription.prescription_date_display || '—') + ' · Status: ' + escapeHtml(activePrescription.status_label || '—') + '</p><h2>Medicines</h2><div class="table-responsive"><table><thead><tr><th>Medicine</th><th>Duration Days</th><th>Frequency</th><th>Dose</th><th>Intake</th><th>Note</th></tr></thead><tbody>' + rows + '</tbody></table></div></body></html>';
 
             printWindow.onload = function () {
                 window.setTimeout(function () {
@@ -90,6 +109,8 @@
                     printWindow.close();
                 }, 250);
             };
+            printMarkup = printMarkup.replace('<th>Duration Days</th>', '<th>Duration</th>').replace('<h2>Medicines</h2>', '<h2>Prescription Summary</h2><p>Duration Days: ' + escapeHtml(printDurationSummary) + '</p><h2>Medicines</h2>');
+            if (! printDurationSummary) printMarkup = printMarkup.replace('<h2>Prescription Summary</h2><p>Duration Days: </p>', '');
             printWindow.document.open();
             printWindow.document.write(printMarkup);
             printWindow.document.close();

@@ -16,7 +16,7 @@ class PrescriptionItemModel extends Model
 
     protected $protectFields = true;
 
-    protected $allowedFields = ['prescription_id', 'medicine_id', 'medicine_name', 'dosage', 'frequency', 'duration', 'duration_unit', 'instructions', 'quantity', 'notes', 'created_at', 'updated_at'];
+    protected $allowedFields = ['prescription_id', 'medicine_id', 'medicine_name', 'dosage', 'frequency', 'duration', 'duration_unit', 'instructions', 'quantity', 'dispensing_quantity', 'dispensing_quantity_updated_by', 'dispensing_quantity_updated_at', 'notes', 'created_at', 'updated_at'];
 
     protected $useTimestamps = true;
 

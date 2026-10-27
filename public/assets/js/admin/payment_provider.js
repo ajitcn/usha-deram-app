@@ -1,7 +1,7 @@
 (function () {
     'use strict';
-    if (window.rootinsPaymentProviderBound) return;
-    window.rootinsPaymentProviderBound = true;
+    if (window.ushaDermaPaymentProviderBound) return;
+    window.ushaDermaPaymentProviderBound = true;
     var form = document.getElementById('paymentProviderForm'), modal = document.getElementById('paymentProviderModal');
     if (!form || !modal) return;
     var title = document.getElementById('paymentProviderModalTitle'), submit = form.querySelector('[type="submit"]');

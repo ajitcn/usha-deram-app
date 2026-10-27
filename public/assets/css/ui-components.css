@@ -1,4 +1,4 @@
-/* ROOTINS shared UI components. Loaded after the base theme and before any
+/* USHA DERMA shared UI components. Loaded after the base theme and before any
    module-specific content styles. */
 :root {
     --ri-ui-charcoal: var(--ri-color-charcoal, #242424);
@@ -7,7 +7,7 @@
     --ri-ui-page: var(--ri-color-page, #f3f4f5);
     --ri-ui-border: var(--ri-color-border, #d7d9dc);
     --ri-ui-muted: var(--ri-color-muted, #62666b);
-    --ri-ui-focus: var(--ri-color-focus, #806b36);
+    --ri-ui-focus: var(--ri-color-focus, #c3a56d);
     --ri-ui-success: var(--ri-color-success, #3f7658);
     --ri-ui-warning: var(--ri-color-warning, #8a671f);
     --ri-ui-danger: var(--ri-color-danger, #a34d4d);
@@ -93,15 +93,36 @@ fieldset:disabled .btn { cursor: not-allowed; opacity: .58; }
 .badge-success, .status-success, .status-active, .status-delivered { color: #2f6548 !important; background: #e7f2eb !important; border-color: #bdd9c6 !important; }
 .badge-warning, .status-warning, .status-pending, .status-processing { color: #765715 !important; background: #fbf2d8 !important; border-color: #e6d49d !important; }
 .badge-danger, .status-danger, .status-failed, .status-cancelled { color: #873f3f !important; background: #f8e7e7 !important; border-color: #e3bbbb !important; }
-.badge-info, .status-info, .source-badge.shopify { color: #4e5e6b !important; background: #edf1f3 !important; border-color: #cbd4da !important; }
+.badge-info, .status-info { color: #4e5e6b !important; background: #edf1f3 !important; border-color: #cbd4da !important; }
 .badge-secondary, .badge-light, .status-neutral, .status-inactive, .permission-badge { color: #596067 !important; background: #eef0f1 !important; border-color: #d4d8db !important; }
 .source-badge { color: var(--ri-ui-charcoal); background: #f1f2f2; border-color: var(--ri-ui-border); }
 
 /* Tables, action columns, lists, and grid cards */
-.table-responsive { max-width: 100%; overflow-x: auto; overflow-y: visible; -webkit-overflow-scrolling: touch; }
-.table { width: 100%; color: var(--ri-ui-black); }
+.table-responsive,
+[class*="table-wrap"] {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto !important;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+}
+.table-responsive > .table,
+[class*="table-wrap"] > .table,
+.table-responsive > table,
+[class*="table-wrap"] > table {
+    max-width: none;
+    min-width: 100%;
+}
+.table { width: 100%; max-width: 100%; color: var(--ri-ui-black); }
 .table thead th { padding: .7rem .85rem; background: var(--ri-ui-page); border-color: var(--ri-ui-border); color: var(--ri-ui-muted); font-size: .68rem; font-weight: 800; letter-spacing: .05em; line-height: 1.25; text-transform: uppercase; white-space: nowrap; vertical-align: middle; }
-.table td { max-width: 22rem; padding: .7rem .85rem; border-color: #e7e9eb; overflow-wrap: anywhere; vertical-align: middle; }
+.table td,
+.table th { max-width: 22rem; padding: .7rem .85rem; border-color: #e7e9eb; overflow-wrap: anywhere; word-break: break-word; vertical-align: middle; }
+.table td a,
+.table td code,
+.table th a,
+.table th code { overflow-wrap: anywhere; word-break: break-word; white-space: normal; }
 .table td:last-child, .table th:last-child { white-space: nowrap; }
 .table tbody tr:hover { background: #fafafa; }
 .table .dropdown, .table .btn-group { position: relative; }
@@ -171,9 +192,7 @@ label { color: var(--ri-ui-black); font-size: .78rem; font-weight: 700; }
 }
 
 .admin-shell .dashboard-container,
-.admin-shell #core-api-page,
-.admin-shell #shopify-integration-page,
-.admin-shell #shopify-order-imports {
+.admin-shell #core-api-page {
     min-width: 0;
 }
 
@@ -197,9 +216,7 @@ label { color: var(--ri-ui-black); font-size: .78rem; font-weight: 700; }
 
 .admin-shell .dashboard-container .card,
 .admin-shell .dashboard-container .access-card,
-.admin-shell #core-api-page .core-api-panel,
-.admin-shell #shopify-integration-page .card,
-.admin-shell #shopify-order-imports .card {
+.admin-shell #core-api-page .core-api-panel {
     min-width: 0;
     overflow: hidden;
 }

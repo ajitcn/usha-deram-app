@@ -8,6 +8,7 @@ use Admin\Models\Doctor\DoctorModel;
 use Admin\Models\PatientModel;
 use App\Controllers\BaseAdminController;
 use App\Services\AppointmentConsultationEligibility;
+use App\Services\ConsultationFeePaymentService;
 
 class Appointment extends BaseAdminController
 {
@@ -36,8 +37,8 @@ class Appointment extends BaseAdminController
         $doctorId = (int) $this->request->getGet('doctor_id');
         $dateFromInput = trim((string) $this->request->getGet('date_from'));
         $dateToInput = trim((string) $this->request->getGet('date_to'));
-        $dateFrom = rootins_parse_date($dateFromInput) ?? '';
-        $dateTo = rootins_parse_date($dateToInput) ?? '';
+        $dateFrom = usha_derma_parse_date($dateFromInput) ?? '';
+        $dateTo = usha_derma_parse_date($dateToInput) ?? '';
         $pageSize = (int) $this->request->getGet('page_size');
         $pageSize = in_array($pageSize, [10, 15, 25, 50], true) ? $pageSize : 15;
         $query = $this->appointment->select('
@@ -84,17 +85,19 @@ class Appointment extends BaseAdminController
         }
         $appointments = $query->orderBy('appointments.appointment_date', 'DESC')->orderBy('appointments.appointment_time', 'DESC')->paginate($pageSize, 'appointments');
         $eligibility = new AppointmentConsultationEligibility();
-        $appointments = array_map(static function (array $appointment) use ($eligibility): array {
+        $feeService = new ConsultationFeePaymentService();
+        $appointments = array_map(static function (array $appointment) use ($eligibility, $feeService): array {
             $appointment['consultation_date_today'] = $eligibility->isToday($appointment);
             $appointment['consultation_date_passed'] = $eligibility->isPast($appointment);
             $appointment['consultation_unavailable_reason'] = $eligibility->unavailableReason($appointment);
             $appointment['consultation_eligible'] = $eligibility->isConsultable($appointment)
                 && in_array((string) ($appointment['status'] ?? ''), ['scheduled', 'confirmed', 'checked_in', 'in_queue'], true);
+            $appointment['fee_summary'] = $feeService->summary((int) $appointment['id'], (int) $appointment['clinic_id']);
 
             return $appointment;
         }, $appointments);
 
-        return view(ADMIN_VIEW . 'pages/appointment/index', ['appointments' => $appointments, 'pager' => $this->appointment->pager, 'filters' => ['search' => $search, 'status' => $status, 'appointment_type' => $appointmentType, 'clinic_id' => $clinicId > 0 ? $clinicId : '', 'doctor_id' => $doctorId > 0 ? $doctorId : '', 'date_from' => rootins_format_date($dateFrom), 'date_to' => rootins_format_date($dateTo), 'page_size' => $pageSize], 'canCreate' => $this->hasPermission('appointment.create'), 'canEdit' => $this->hasPermission('appointment.edit'), 'canDelete' => $this->hasPermission('appointment.delete'), 'canConsult' => $this->hasPermission('consultation.view') && $this->hasPermission('consultation.create'), 'canBilling' => $this->hasPermission('billing.view'), 'patients' => $this->patient->select('id, registration_number, first_name, middle_name, last_name')->where('status', 1)->orderBy('first_name', 'ASC')->orderBy('last_name', 'ASC')->findAll(), 'doctors' => $this->doctor->select('id, first_name, last_name, doctor_code')->where('status', 1)->orderBy('first_name', 'ASC')->orderBy('last_name', 'ASC')->findAll(), 'clinics' => $this->clinic->dropdown()]);
+        return view(ADMIN_VIEW . 'pages/appointment/index', ['appointments' => $appointments, 'pager' => $this->appointment->pager, 'filters' => ['search' => $search, 'status' => $status, 'appointment_type' => $appointmentType, 'clinic_id' => $clinicId > 0 ? $clinicId : '', 'doctor_id' => $doctorId > 0 ? $doctorId : '', 'date_from' => usha_derma_format_date($dateFrom), 'date_to' => usha_derma_format_date($dateTo), 'page_size' => $pageSize], 'canCreate' => $this->hasPermission('appointment.create'), 'canEdit' => $this->hasPermission('appointment.edit'), 'canDelete' => $this->hasPermission('appointment.delete'), 'canConsult' => $this->hasPermission('consultation.view') && $this->hasPermission('consultation.create'), 'canBilling' => $this->hasPermission('billing.view'), 'canCollectFee' => $this->hasPermission('billing.edit'), 'patients' => $this->patient->select('id, registration_number, first_name, middle_name, last_name')->where('status', 1)->orderBy('first_name', 'ASC')->orderBy('last_name', 'ASC')->findAll(), 'doctors' => $this->doctor->select('id, first_name, last_name, doctor_code')->where('status', 1)->orderBy('first_name', 'ASC')->orderBy('last_name', 'ASC')->findAll(), 'clinics' => $this->clinic->dropdown()]);
     }
 
     public function view(int $id)
@@ -118,7 +121,14 @@ class Appointment extends BaseAdminController
             return redirect()->to(base_url('admin/appointments'))->with('error', 'Appointment not found.');
         }
 
-        return view(ADMIN_VIEW . 'pages/appointment/view', ['appointment' => $appointment]);
+        return view(ADMIN_VIEW . 'pages/appointment/view', ['appointment' => $appointment, 'feeSummary' => (new ConsultationFeePaymentService())->summary($id, (int) $appointment['clinic_id']), 'canCollectFee' => $this->hasPermission('billing.edit'), 'canEdit' => $this->hasPermission('appointment.edit')]);
+    }
+
+    public function collectFee(int $appointmentId)
+    {
+        if (!$this->request->isAJAX() || $this->request->getMethod(true) !== 'POST') return $this->response->setStatusCode(405)->setJSON(['status' => false, 'msg' => 'Invalid request.']);
+        $result = (new ConsultationFeePaymentService())->collect($appointmentId, $this->request->getPost(), (int) ($this->user['id'] ?? 0), (int) ($this->user['clinic_id'] ?? session('clinic_id') ?? 0) ?: null);
+        return $this->response->setStatusCode((int) $result['http'])->setJSON(['status' => (bool) $result['ok'], 'msg' => $result['message'], 'errors' => $result['errors'] ?? null, 'data' => $result['data'] ?? null]);
     }
 
     public function calendar()
@@ -146,8 +156,8 @@ class Appointment extends BaseAdminController
         $doctorId = (int) $this->request->getGet('doctor_id');
         $dateFromInput = trim((string) $this->request->getGet('date_from'));
         $dateToInput = trim((string) $this->request->getGet('date_to'));
-        $dateFrom = $dateFromInput === '' ? '' : rootins_parse_date($dateFromInput);
-        $dateTo = $dateToInput === '' ? '' : rootins_parse_date($dateToInput);
+        $dateFrom = $dateFromInput === '' ? '' : usha_derma_parse_date($dateFromInput);
+        $dateTo = $dateToInput === '' ? '' : usha_derma_parse_date($dateToInput);
         $errors = [];
 
         if ($dateFromInput !== '' && $dateFrom === null) {
@@ -248,7 +258,7 @@ class Appointment extends BaseAdminController
         $clinicId = (int) ($clinics[0]['id'] ?? 0);
 
         $today = (new \DateTimeImmutable('now', new \DateTimeZone(config('App')->appTimezone)))->format('Y-m-d');
-        return view(ADMIN_VIEW . 'pages/appointment/queue', ['clinics' => $clinics, 'selectedClinic' => $clinicId, 'selectedDate' => rootins_format_date($today)]);
+        return view(ADMIN_VIEW . 'pages/appointment/queue', ['clinics' => $clinics, 'selectedClinic' => $clinicId, 'selectedDate' => usha_derma_format_date($today)]);
     }
 
     public function queueData()
@@ -605,7 +615,7 @@ class Appointment extends BaseAdminController
             return $this->validator->getErrors();
         }
 
-        return rootins_parse_date($this->request->getPost('appointment_date')) === null ? ['appointment_date' => 'Enter a valid appointment date as dd-mm-yyyy.'] : [];
+        return usha_derma_parse_date($this->request->getPost('appointment_date')) === null ? ['appointment_date' => 'Enter a valid appointment date as dd-mm-yyyy.'] : [];
     }
 
     private function validateReferences(): array
@@ -644,7 +654,7 @@ class Appointment extends BaseAdminController
         if ($clinicId <= 0 || $this->clinic->where('id', $clinicId)->where('status', 1)->first() === null) {
             $errors['clinic_id'] = 'The selected clinic is invalid or inactive.';
         }
-        if (rootins_parse_date($date) === null) {
+        if (usha_derma_parse_date($date) === null) {
             $errors['appointment_date'] = 'The appointment date is invalid.';
         }
 
@@ -682,8 +692,8 @@ class Appointment extends BaseAdminController
     {
         $dateFromInput = trim((string) $this->request->getGet('date_from'));
         $dateToInput = trim((string) $this->request->getGet('date_to'));
-        $dateFrom = $dateFromInput !== '' ? rootins_parse_date($dateFromInput) : null;
-        $dateTo = $dateToInput !== '' ? rootins_parse_date($dateToInput) : null;
+        $dateFrom = $dateFromInput !== '' ? usha_derma_parse_date($dateFromInput) : null;
+        $dateTo = $dateToInput !== '' ? usha_derma_parse_date($dateToInput) : null;
         $data = [
             'date_from' => $dateFrom ?? '',
             'date_to' => $dateTo ?? '',
@@ -780,7 +790,7 @@ class Appointment extends BaseAdminController
                 return [
                     'id' => (int) $row['id'],
                     'appointment_number' => $row['appointment_number'],
-                    'appointment_date' => rootins_format_date($row['appointment_date']),
+                    'appointment_date' => usha_derma_format_date($row['appointment_date']),
                     'appointment_time' => substr((string) $row['appointment_time'], 0, 5),
                     'registration_number' => $row['registration_number'] ?? null,
                     'patient_name' => trim(implode(' ', array_filter([$row['patient_first_name'] ?? '', $row['patient_middle_name'] ?? '', $row['patient_last_name'] ?? ''], static fn ($part) => $part !== null && $part !== ''))),
@@ -821,7 +831,7 @@ class Appointment extends BaseAdminController
         $cancelled = $status === 'cancelled';
         $cancellationReason = trim((string) $this->request->getPost('cancellation_reason'));
 
-        return ['patient_id' => (int) $this->request->getPost('patient_id'), 'doctor_id' => (int) $this->request->getPost('doctor_id'), 'clinic_id' => (int) $this->request->getPost('clinic_id'), 'appointment_date' => rootins_parse_date($this->request->getPost('appointment_date')) ?? '', 'appointment_time' => trim((string) $this->request->getPost('appointment_time')), 'duration_minutes' => (int) $this->request->getPost('duration_minutes'), 'appointment_type' => $this->request->getPost('appointment_type'), 'status' => $status, 'created_by_type' => 'user', 'created_by_id' => $userId, 'booking_source' => 'admin', 'reason_for_visit' => $this->nullableString('reason_for_visit'), 'notes' => $this->nullableString('notes'), 'cancelled_at' => $cancelled ? date('Y-m-d H:i:s') : null, 'cancelled_by' => $cancelled ? $userId : null, 'cancellation_reason' => $cancelled && $cancellationReason !== '' ? $cancellationReason : null, 'updated_at' => date('Y-m-d H:i:s')];
+        return ['patient_id' => (int) $this->request->getPost('patient_id'), 'doctor_id' => (int) $this->request->getPost('doctor_id'), 'clinic_id' => (int) $this->request->getPost('clinic_id'), 'appointment_date' => usha_derma_parse_date($this->request->getPost('appointment_date')) ?? '', 'appointment_time' => trim((string) $this->request->getPost('appointment_time')), 'duration_minutes' => (int) $this->request->getPost('duration_minutes'), 'appointment_type' => $this->request->getPost('appointment_type'), 'status' => $status, 'created_by_type' => 'user', 'created_by_id' => $userId, 'booking_source' => 'admin', 'reason_for_visit' => $this->nullableString('reason_for_visit'), 'notes' => $this->nullableString('notes'), 'cancelled_at' => $cancelled ? date('Y-m-d H:i:s') : null, 'cancelled_by' => $cancelled ? $userId : null, 'cancellation_reason' => $cancelled && $cancellationReason !== '' ? $cancellationReason : null, 'updated_at' => date('Y-m-d H:i:s')];
     }
 
     private function authenticatedUserId(): ?int

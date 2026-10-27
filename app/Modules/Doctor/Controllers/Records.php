@@ -4,10 +4,15 @@ namespace Doctor\Controllers;
 
 use Admin\Models\Doctor\DoctorModel;
 use Admin\Models\Configuration\ServiceModel;
+use Admin\Models\MedicineModel;
+use Admin\Models\PrescriptionItemModel;
+use Admin\Models\PrescriptionModel;
 use Admin\Models\PrescriptionOptionModel;
 use Admin\Models\User;
 use App\Controllers\BaseController;
 use App\Services\AppointmentConsultationEligibility;
+use App\Services\ConsultationFeePaymentService;
+use App\Services\DoctorPrescriptionEditPolicy;
 use CodeIgniter\HTTP\RedirectResponse;
 use CodeIgniter\HTTP\ResponseInterface;
 use Doctor\Models\FollowUpStatusModel;
@@ -243,12 +248,13 @@ class Records extends BaseController
             [$appointments, $pagination] = $this->window($query->orderBy('appointments.appointment_date', 'DESC')->orderBy('appointments.appointment_time', 'DESC')->orderBy('appointments.id', 'DESC'), $filters['page'], $filters['page_size']);
             $consultationEligibility = new AppointmentConsultationEligibility();
             $permissions = array_fill_keys((array) session('permissions'), true);
+            $feeService = new ConsultationFeePaymentService();
             $normalizedAppointments = [];
 
             foreach ($appointments as $rowIndex => $appointment) {
                 $failedRowIndex = $rowIndex;
                 $failedRowKeys = array_keys($appointment);
-                $normalizedAppointments[] = $this->normalizeAppointmentRow($appointment, $consultationEligibility, [
+                $normalized = $this->normalizeAppointmentRow($appointment, $consultationEligibility, [
                     'view' => ! empty($permissions['appointment.view']),
                     'edit' => ! empty($permissions['appointment.edit']),
                     'consult' => ! empty($permissions['consultation.edit']),
@@ -256,6 +262,9 @@ class Records extends BaseController
                     'prescription' => ! empty($permissions['prescription.view']),
                     'billing' => ! empty($permissions['billing.view']),
                 ]);
+                $normalized['fee_summary'] = $feeService->summary((int) $appointment['id'], (int) $context['clinic_id'], (int) $context['doctor_id']);
+                $normalized['can_collect_fee'] = ! empty($permissions['billing.edit']) && ! in_array((string) ($appointment['status'] ?? ''), ['cancelled', 'no_show'], true) && (float) ($normalized['fee_summary']['remaining_amount'] ?? 0) > 0;
+                $normalizedAppointments[] = $normalized;
             }
             $appointments = $normalizedAppointments;
 
@@ -528,6 +537,146 @@ class Records extends BaseController
         return view(DOCTOR_VIEW . 'pages/billing', ['invoices' => $invoices, 'filters' => $filters, 'pagination' => $pagination]);
     }
 
+    public function editPrescription(int $prescriptionId): string|RedirectResponse
+    {
+        $context = $this->context();
+
+        if ($context === null || $prescriptionId <= 0) {
+            return redirect()->to(base_url('permission-denied'));
+        }
+        $db = db_connect();
+        $prescription = $db->table('prescriptions')
+            ->select('prescriptions.*, consultations.appointment_id AS consultation_appointment_id, patients.first_name, patients.last_name, patients.registration_number')
+            ->join('patients', 'patients.id = prescriptions.patient_id AND patients.clinic_id = prescriptions.clinic_id')
+            ->join('consultations', 'consultations.id = prescriptions.consultation_id AND consultations.doctor_id = prescriptions.doctor_id AND consultations.clinic_id = prescriptions.clinic_id')
+            ->where('prescriptions.id', $prescriptionId)
+            ->where('prescriptions.doctor_id', $context['doctor_id'])
+            ->where('prescriptions.clinic_id', $context['clinic_id'])
+            ->get()->getRowArray();
+
+        if ($prescription === null) {
+            return redirect()->to(base_url('doctor/prescriptions'))->with('error', 'Prescription was not found in your scope.');
+        }
+        $editDecision = $this->doctorPrescriptionEditDecision($prescription, $context['clinic_id']);
+        if (! $editDecision['allowed']) {
+            return redirect()->to(base_url('doctor/clinical?appointment_id=' . (int) ($prescription['consultation_appointment_id'] ?? 0) . '&patient_id=' . (int) ($prescription['patient_id'] ?? 0)))->with('error', $editDecision['message']);
+        }
+        $items = $db->table('prescription_items')->where('prescription_id', $prescriptionId)->orderBy('id', 'ASC')->get()->getResultArray();
+        $medicineIds = array_values(array_filter(array_map(static fn (array $item): int => (int) ($item['medicine_id'] ?? 0), $items)));
+        $medicineQuery = $db->table('medicines')->select('id, medicine_name')->where('status', 'active');
+
+        if ($medicineIds !== []) {
+            $medicineQuery->orWhereIn('id', $medicineIds);
+        }
+        $medicines = $medicineQuery->orderBy('medicine_name', 'ASC')->get()->getResultArray();
+        $options = new PrescriptionOptionModel();
+        $optionSets = [
+            'duration' => $options->activeOptions(PrescriptionOptionModel::TYPES['duration'], $context['clinic_id']),
+            'frequency' => $options->activeOptions(PrescriptionOptionModel::TYPES['frequency'], $context['clinic_id']),
+            'dose' => $options->activeOptions(PrescriptionOptionModel::TYPES['dose'], $context['clinic_id']),
+            'intake' => $options->activeOptions(PrescriptionOptionModel::TYPES['intake'], $context['clinic_id']),
+        ];
+        $prescription['patient_name'] = trim(($prescription['first_name'] ?? '') . ' ' . ($prescription['last_name'] ?? '')) ?: 'Patient not recorded';
+
+        return view(DOCTOR_VIEW . 'pages/prescription_edit', compact('prescription', 'items', 'medicines', 'optionSets'));
+    }
+
+    public function updatePrescription(int $prescriptionId): ResponseInterface|RedirectResponse
+    {
+        if ($this->request->getMethod(true) !== 'POST') {
+            return $this->json(405, false, 'Invalid request.');
+        }
+        $context = $this->context();
+
+        if ($context === null || $prescriptionId <= 0) {
+            return $this->json(403, false, 'Doctor scope is invalid.');
+        }
+        $errors = [];
+        $durationInput = trim((string) $this->request->getPost('medicine_duration'));
+        $medicineDuration = $this->normalizePrescriptionEditDuration($durationInput, $errors);
+        $notes = trim((string) ($this->request->getPost('prescription_notes') ?? $this->request->getPost('notes')));
+
+        if (mb_strlen($notes) > 65535) {
+            $errors['prescription_notes'] = 'Prescription notes are too long.';
+        }
+        $postedItems = $this->request->getPost('items');
+        $existingItems = db_connect()->table('prescription_items')->where('prescription_id', $prescriptionId)->orderBy('id', 'ASC')->get()->getResultArray();
+        $normalizedItems = $this->normalizePrescriptionEditItems(is_array($postedItems) ? $postedItems : [], $errors, $context['clinic_id'], $existingItems);
+
+        if ($normalizedItems === []) {
+            $errors['items'] = 'At least one prescription medicine is required.';
+        }
+        if ($durationInput === '') {
+            $errors['medicine_duration'] = 'Prescription duration is required.';
+        }
+        if ($errors !== []) {
+            return $this->validation($errors);
+        }
+        $db = db_connect();
+        $db->transBegin();
+
+        try {
+            // Lock the prescription row so a pharmacy transition cannot finalize
+            // it between the eligibility check and the clinical update.
+            $locked = $db->query('SELECT * FROM prescriptions WHERE id = ? AND doctor_id = ? AND clinic_id = ? FOR UPDATE', [$prescriptionId, $context['doctor_id'], $context['clinic_id']])->getRowArray();
+
+            $editDecision = $locked === null ? ['allowed' => false, 'message' => 'Prescription was not found in your scope.'] : $this->doctorPrescriptionEditDecision($locked, $context['clinic_id']);
+            if ($locked === null || ! $editDecision['allowed']) {
+                throw new \DomainException($editDecision['message']);
+            }
+            $oldItems = $db->table('prescription_items')->where('prescription_id', $prescriptionId)->orderBy('id', 'ASC')->get()->getResultArray();
+            $oldSnapshot = ['medicine_duration' => $locked['medicine_duration'] ?? null, 'notes' => $locked['notes'] ?? null, 'items' => $this->auditPrescriptionItems($oldItems)];
+            $now = date('Y-m-d H:i:s');
+            if (! $db->table('prescriptions')->where('id', $prescriptionId)->where('doctor_id', $context['doctor_id'])->where('clinic_id', $context['clinic_id'])->whereIn('status', ['draft', 'submitted', 'clarification_requested'])->update(['medicine_duration' => $medicineDuration, 'notes' => $notes === '' ? null : $notes, 'updated_at' => $now])) {
+                throw new \RuntimeException('Prescription update failed.');
+            }
+            $postedIds = [];
+            foreach ($normalizedItems as $item) {
+                $itemId = (int) ($item['_item_id'] ?? 0);
+                unset($item['_item_id']);
+                $item['updated_at'] = $now;
+                if ($itemId > 0) {
+                    $postedIds[$itemId] = true;
+                    if (! $db->table('prescription_items')->where('id', $itemId)->where('prescription_id', $prescriptionId)->update($item)) {
+                        throw new \RuntimeException('Prescription medicine update failed.');
+                    }
+                } else {
+                    $item['prescription_id'] = $prescriptionId;
+                    $item['created_at'] = $now;
+                    if (! $db->table('prescription_items')->insert($item)) {
+                        throw new \RuntimeException('Prescription medicine insert failed.');
+                    }
+                }
+            }
+            foreach ($oldItems as $oldItem) {
+                $oldId = (int) $oldItem['id'];
+                if (! isset($postedIds[$oldId]) && $oldItem['dispensing_quantity'] !== null) {
+                    throw new \DomainException('A medicine with a pharmacy dispensing quantity cannot be removed.');
+                }
+                if (! isset($postedIds[$oldId])) {
+                    $db->table('prescription_items')->where('id', $oldId)->where('prescription_id', $prescriptionId)->delete();
+                }
+            }
+            if (! $db->transCommit()) {
+                throw new \RuntimeException('Prescription edit transaction failed.');
+            }
+            $newItems = $db->table('prescription_items')->where('prescription_id', $prescriptionId)->orderBy('id', 'ASC')->get()->getResultArray();
+            service('audit')->record('doctor.prescription_updated', ['doctor_id' => $context['doctor_id'], 'clinic_id' => $context['clinic_id'], 'prescription_id' => $prescriptionId, 'prescription_number' => $locked['prescription_number'] ?? null, 'old_values' => $oldSnapshot, 'new_values' => ['medicine_duration' => $medicineDuration, 'notes' => $notes === '' ? null : $notes, 'items' => $this->auditPrescriptionItems($newItems)]]);
+            $this->notifyPharmacyPrescriptionUpdated($context['clinic_id'], $prescriptionId, (string) ($locked['prescription_number'] ?? ''));
+
+            return redirect()->to(base_url('doctor/prescriptions?prescription_id=' . $prescriptionId))->with('success', 'Prescription updated successfully.');
+        } catch (\DomainException $e) {
+            $db->transRollback();
+
+            return $this->request->isAJAX() ? $this->json(409, false, $e->getMessage()) : redirect()->to(base_url('doctor/prescriptions'))->with('error', $e->getMessage());
+        } catch (Throwable $e) {
+            $db->transRollback();
+            log_message('error', 'Doctor prescription edit failed: ' . $e->getMessage());
+
+            return $this->request->isAJAX() ? $this->json(500, false, 'Prescription could not be updated safely.') : redirect()->to(base_url('doctor/prescriptions'))->with('error', 'Prescription could not be updated safely.');
+        }
+    }
+
     public function prescriptions(): string|RedirectResponse
     {
         $context = $this->context();
@@ -536,7 +685,7 @@ class Records extends BaseController
             return redirect()->to(base_url('permission-denied'));
         }
         $filters = $this->prescriptionFilters();
-        $query = db_connect()->table('prescriptions')->select('prescriptions.*, patients.first_name AS patient_first_name, patients.last_name AS patient_last_name, patients.registration_number, patients.date_of_birth AS patient_date_of_birth, patients.mobile_number AS patient_mobile_number, patients.mobile_normalized AS patient_mobile_normalized, patients.country_code AS patient_legacy_country_code, telephone_country_codes.normalized_code AS patient_telephone_country_code, clinics.clinic_name, clinics.address AS clinic_address, clinics.mobile AS clinic_mobile, clinics.logo AS clinic_logo, (SELECT COUNT(*) FROM prescription_items AS prescription_item_count WHERE prescription_item_count.prescription_id = prescriptions.id) AS medicine_count', false)->join('patients', 'patients.id = prescriptions.patient_id AND patients.clinic_id = prescriptions.clinic_id')->join('telephone_country_codes', 'telephone_country_codes.id = patients.telephone_country_code_id', 'left')->join('clinics', 'clinics.id = prescriptions.clinic_id AND clinics.status = 1', 'left')->where('prescriptions.doctor_id', $context['doctor_id'])->where('prescriptions.clinic_id', $context['clinic_id'])->where('patients.clinic_id', $context['clinic_id']);
+        $query = db_connect()->table('prescriptions')->select('prescriptions.*, patients.first_name AS patient_first_name, patients.last_name AS patient_last_name, patients.registration_number, patients.date_of_birth AS patient_date_of_birth, patients.age AS patient_recorded_age, patients.mobile_number AS patient_mobile_number, patients.mobile_normalized AS patient_mobile_normalized, patients.country_code AS patient_legacy_country_code, telephone_country_codes.normalized_code AS patient_telephone_country_code, clinics.clinic_name, clinics.address AS clinic_address, clinics.mobile AS clinic_mobile, clinics.logo AS clinic_logo, (SELECT COUNT(*) FROM prescription_items AS prescription_item_count WHERE prescription_item_count.prescription_id = prescriptions.id) AS medicine_count, (SELECT COUNT(*) FROM medicine_orders AS prescription_order_count WHERE prescription_order_count.prescription_id = prescriptions.id AND prescription_order_count.clinic_id = prescriptions.clinic_id) AS order_count', false)->join('patients', 'patients.id = prescriptions.patient_id AND patients.clinic_id = prescriptions.clinic_id')->join('telephone_country_codes', 'telephone_country_codes.id = patients.telephone_country_code_id', 'left')->join('clinics', 'clinics.id = prescriptions.clinic_id AND clinics.status = 1', 'left')->where('prescriptions.doctor_id', $context['doctor_id'])->where('prescriptions.clinic_id', $context['clinic_id'])->where('patients.clinic_id', $context['clinic_id']);
         $this->applySearch($query, $filters['search'], ['prescriptions.prescription_number', 'patients.first_name', 'patients.last_name', 'patients.registration_number', 'patients.mobile_number', 'patients.mobile_normalized', 'prescriptions.status']);
 
         if ($filters['status'] !== '') {
@@ -556,17 +705,45 @@ class Records extends BaseController
         }
         [$prescriptions, $pagination] = $this->window($query->orderBy('prescriptions.prescription_date', 'DESC')->orderBy('prescriptions.id', 'DESC'), $filters['page'], $filters['page_size']);
 
-        foreach ($prescriptions as &$prescription) {
-            $dateOfBirth = trim((string) ($prescription['patient_date_of_birth'] ?? ''));
-            $prescription['patient_age'] = '—';
+        $doctorProfile = (new DoctorModel())
+            ->select('first_name, last_name, qualification, registration_number')
+            ->where('id', $context['doctor_id'])
+            ->where('clinic_id', $context['clinic_id'])
+            ->where('status', 1)
+            ->first() ?? [];
+        $consultationDetails = [];
+        $prescriptionEditPolicy = new DoctorPrescriptionEditPolicy();
+        $consultationIds = array_values(array_filter(array_map(static fn ($id): int => (int) $id, array_column($prescriptions, 'consultation_id'))));
 
-            if ($dateOfBirth !== '') {
-                try {
-                    $prescription['patient_age'] = (string) (new \DateTimeImmutable($dateOfBirth))->diff(new \DateTimeImmutable('today'))->y;
-                } catch (Throwable) {
-                    $prescription['patient_age'] = '—';
-                }
+        if ($consultationIds !== []) {
+            foreach (db_connect()->table('consultations')
+                ->select('id, appointment_id, status, completed_at, updated_at, consultation_number, diagnosis, clinical_notes, treatment_plan, follow_up_date, follow_up_time, follow_up_remarks')
+                ->whereIn('id', $consultationIds)
+                ->where('doctor_id', $context['doctor_id'])
+                ->where('clinic_id', $context['clinic_id'])
+                ->get()
+                ->getResultArray() as $consultation) {
+                $consultationDetails[(int) $consultation['id']] = $consultation;
             }
+        }
+
+        foreach ($prescriptions as &$prescription) {
+            $clinicalDetails = $consultationDetails[(int) ($prescription['consultation_id'] ?? 0)] ?? [];
+            $editDecision = $clinicalDetails === [] ? ['allowed' => false] : $prescriptionEditPolicy->evaluate($clinicalDetails, $prescription, (int) ($prescription['order_count'] ?? 0) > 0);
+            $prescription['doctor_name'] = trim((string) ($doctorProfile['first_name'] ?? '') . ' ' . (string) ($doctorProfile['last_name'] ?? ''));
+            $prescription['doctor_qualification'] = trim((string) ($doctorProfile['qualification'] ?? ''));
+            $prescription['doctor_registration_number'] = trim((string) ($doctorProfile['registration_number'] ?? ''));
+            $prescription['consultation_number'] = trim((string) ($clinicalDetails['consultation_number'] ?? ''));
+            $prescription['diagnosis'] = trim((string) ($clinicalDetails['diagnosis'] ?? ''));
+            $prescription['clinical_notes'] = trim((string) ($clinicalDetails['clinical_notes'] ?? ''));
+            $prescription['treatment_plan'] = trim((string) ($clinicalDetails['treatment_plan'] ?? ''));
+            $prescription['follow_up_date'] = trim((string) ($clinicalDetails['follow_up_date'] ?? ''));
+            $prescription['follow_up_time'] = trim((string) ($clinicalDetails['follow_up_time'] ?? ''));
+            $prescription['follow_up_remarks'] = trim((string) ($clinicalDetails['follow_up_remarks'] ?? ''));
+            $prescription['consultation_appointment_id'] = (int) ($clinicalDetails['appointment_id'] ?? 0);
+            $prescription['can_edit_consultation'] = (bool) ($editDecision['allowed'] ?? false) && $prescription['consultation_appointment_id'] > 0 && (int) ($prescription['patient_id'] ?? 0) > 0;
+            $prescriptionAge = usha_derma_patient_age($prescription['patient_recorded_age'] ?? null, $prescription['patient_date_of_birth'] ?? null);
+            $prescription['patient_age'] = $prescriptionAge === null ? '—' : (string) $prescriptionAge;
             $prescription['patient_mobile_display'] = service('telephoneContact')->formatDisplay($prescription['patient_telephone_country_code'] ?? null, $prescription['patient_mobile_normalized'] ?? $prescription['patient_mobile_number'] ?? null, $prescription['patient_legacy_country_code'] ?? null);
         }
         unset($prescription);
@@ -856,6 +1033,125 @@ class Records extends BaseController
         service('audit')->record($action, ['appointment_id' => $appointmentId, 'doctor_id' => $context['doctor_id'], 'clinic_id' => $context['clinic_id']]);
 
         return $this->json(200, true, $message);
+    }
+
+    private function isDoctorEditablePrescription(array $prescription, int $clinicId): bool
+    {
+        return (bool) $this->doctorPrescriptionEditDecision($prescription, $clinicId)['allowed'];
+    }
+
+    private function doctorPrescriptionEditDecision(array $prescription, int $clinicId): array
+    {
+        $consultation = db_connect()->table('consultations')
+            ->where('id', (int) ($prescription['consultation_id'] ?? 0))
+            ->where('doctor_id', (int) ($prescription['doctor_id'] ?? 0))
+            ->where('clinic_id', $clinicId)
+            ->get()->getRowArray();
+        $hasOrder = db_connect()->table('medicine_orders')
+            ->where('prescription_id', (int) ($prescription['id'] ?? 0))
+            ->where('clinic_id', $clinicId)
+            ->countAllResults() > 0;
+
+        return (new DoctorPrescriptionEditPolicy())->evaluate($consultation, $prescription, $hasOrder);
+    }
+
+    private function normalizePrescriptionEditDuration(string $value, array &$errors): ?int
+    {
+        if (! ctype_digit($value) || (int) $value < 1 || (int) $value > 3650) {
+            $errors['medicine_duration'] = 'Prescription duration must be a positive whole number from 1 to 3650.';
+
+            return null;
+        }
+
+        return (int) $value;
+    }
+
+    private function normalizePrescriptionEditItems(array $posted, array &$errors, int $clinicId, array $existingItems): array
+    {
+        $existing = [];
+        foreach ($existingItems as $item) {
+            $existing[(int) $item['id']] = $item;
+        }
+        $items = [];
+        $seen = [];
+        $options = new PrescriptionOptionModel();
+        foreach ($posted as $index => $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+            $itemId = (int) ($item['item_id'] ?? 0);
+            if ($itemId > 0 && ! isset($existing[$itemId])) {
+                $errors["items.{$index}.item_id"] = 'The selected prescription medicine is invalid.';
+                continue;
+            }
+            if ($itemId > 0 && isset($seen[$itemId])) {
+                $errors["items.{$index}.item_id"] = 'A prescription medicine was submitted more than once.';
+                continue;
+            }
+            $seen[$itemId] = true;
+            $medicineId = (int) ($item['medicine_id'] ?? 0);
+            $medicine = $medicineId > 0 ? (new MedicineModel())->where('id', $medicineId)->where('status', 'active')->first() : null;
+            if ($medicine === null && $itemId > 0 && (int) ($existing[$itemId]['medicine_id'] ?? 0) === $medicineId) {
+                $medicine = (new MedicineModel())->where('id', $medicineId)->first();
+            }
+            if ($medicine === null) {
+                $errors["items.{$index}.medicine_id"] = 'Select an active medicine.';
+            }
+            $values = [];
+            foreach ([['duration', PrescriptionOptionModel::TYPES['duration'], 'Duration'], ['frequency', PrescriptionOptionModel::TYPES['frequency'], 'Frequency'], ['dosage', PrescriptionOptionModel::TYPES['dose'], 'Dose'], ['instructions', PrescriptionOptionModel::TYPES['intake'], 'Intake']] as [$field, $type, $label]) {
+                $raw = trim((string) ($item[$field] ?? ''));
+                $option = $raw === '' ? null : $options->activeById($type, ctype_digit($raw) ? (int) $raw : 0, $clinicId);
+                if ($option === null && $raw !== '') {
+                    foreach ($options->activeOptions($type, $clinicId) as $candidate) {
+                        if ($raw === (string) ($candidate['code'] ?? '') || $raw === (string) ($candidate['name'] ?? '')) {
+                            $option = $candidate;
+                            break;
+                        }
+                    }
+                }
+                if ($option === null && $raw !== '' && $itemId > 0) {
+                    $existingValue = match ($field) {
+                        'duration' => (string) ($existing[$itemId]['duration'] ?? ''),
+                        'frequency' => (string) ($existing[$itemId]['frequency'] ?? ''),
+                        'dosage' => (string) ($existing[$itemId]['dosage'] ?? ''),
+                        'instructions' => (string) ($existing[$itemId]['instructions'] ?? ''),
+                        default => '',
+                    };
+                    if ($raw === $existingValue) {
+                        $option = ['code' => $raw, 'name' => $raw];
+                    }
+                }
+                if ($option === null && $raw !== '') {
+                    $errors["items.{$index}.{$field}"] = "Select a valid medicine {$label}.";
+                }
+                $values[$field] = $option;
+            }
+            $note = trim((string) ($item['notes'] ?? ''));
+            if (mb_strlen($note) > 65535) {
+                $errors["items.{$index}.notes"] = 'Medicine notes are too long.';
+            }
+            $items[] = ['_item_id' => $itemId, 'medicine_id' => $medicineId ?: null, 'medicine_name' => $medicine['medicine_name'] ?? '', 'dosage' => $values['dosage']['name'] ?? null, 'frequency' => $values['frequency']['name'] ?? null, 'duration' => isset($values['duration']) && $values['duration'] !== null ? (int) $values['duration']['code'] : null, 'duration_unit' => 'days', 'instructions' => $values['instructions']['name'] ?? null, 'notes' => $note === '' ? null : $note];
+        }
+
+        return $items;
+    }
+
+    private function auditPrescriptionItems(array $items): array
+    {
+        return array_map(static fn (array $item): array => ['id' => (int) ($item['id'] ?? 0), 'medicine_id' => (int) ($item['medicine_id'] ?? 0), 'medicine_name' => (string) ($item['medicine_name'] ?? ''), 'dosage' => $item['dosage'] ?? null, 'frequency' => $item['frequency'] ?? null, 'duration' => $item['duration'] ?? null, 'instructions' => $item['instructions'] ?? null, 'notes' => $item['notes'] ?? null], $items);
+    }
+
+    private function notifyPharmacyPrescriptionUpdated(int $clinicId, int $prescriptionId, string $number): void
+    {
+        $db = db_connect();
+        if (! $db->tableExists('pharmacy_notifications') || ! $db->tableExists('users') || ! $db->tableExists('user_roles') || ! $db->tableExists('roles')) {
+            return;
+        }
+        $now = date('Y-m-d H:i:s');
+        $users = $db->table('users')->select('users.id')->join('user_roles', 'user_roles.user_id = users.id')->join('roles', 'roles.id = user_roles.role_id')->where('users.status', 1)->where('roles.role_code', 'PHARMACY_ASSISTANT')->get()->getResultArray();
+        foreach ($users as $user) {
+            $db->table('pharmacy_notifications')->ignore(true)->insert(['clinic_id' => $clinicId, 'recipient_user_id' => (int) $user['id'], 'recipient_role' => 'Pharmacy Assistant', 'type' => 'prescription_updated', 'title' => 'Prescription updated by doctor', 'message' => 'Prescription ' . ($number !== '' ? $number : '#' . $prescriptionId) . ' was updated and should be reviewed again.', 'related_entity_type' => 'prescription', 'related_entity_id' => $prescriptionId, 'event_key' => 'prescription-updated:' . $prescriptionId . ':' . $now, 'created_at' => $now, 'updated_at' => $now]);
+        }
     }
 
     private function context(): ?array

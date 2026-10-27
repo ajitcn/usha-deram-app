@@ -69,14 +69,6 @@ class Services extends BaseService
         return new \App\Services\TelephoneContactService();
     }
 
-    public static function shopifyConfiguration(bool $getShared = true)
-    {
-        if ($getShared) {
-            return static::getSharedInstance('shopifyConfiguration');
-        }
-
-        return new \App\Services\Shopify\ShopifyConfiguration();
-    }
     /*
      * public static function example($getShared = true)
      * {

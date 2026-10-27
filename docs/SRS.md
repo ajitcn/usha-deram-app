@@ -1,12 +1,12 @@
-# ROOTINS Software Requirements Specification
+# USHA DERMA Software Requirements Specification
 
 **Version:** 0.4 baseline  
 **Date:** 2026-08-29  
-**Product:** ROOTINS healthcare consultation and medicine-fulfilment platform
+**Product:** USHA DERMA healthcare consultation and medicine-fulfilment platform
 
 ## 1. Purpose and vision
 
-ROOTINS provides one controlled workflow from patient registration and appointment booking through consultation, prescription, billing, and prescription-based medicine delivery. It supports four role-oriented modules, each with its own dashboard, while maintaining a shared operational record.
+USHA DERMA provides one controlled workflow from patient registration and appointment booking through consultation, prescription, billing, and prescription-based medicine delivery. It supports four role-oriented modules, each with its own dashboard, while maintaining a shared operational record.
 
 ## 2. Scope
 
@@ -137,7 +137,7 @@ India is the owner-approved jurisdiction baseline for the initial product scope.
 
 ### 7.1 Privacy and health-data controls
 
-ROOTINS must be designed for consent-aware processing, purpose limitation, data minimization, least-privilege access, secure storage and transfers, attributable audit logs, grievance/rights handling, and controlled retention/deletion. Health-record sharing must be explicit, purpose-bound, and revocable where applicable. The final notice, consent language, retention schedule, deletion exceptions, data roles, cross-border/storage decisions, and grievance process are `[NEEDS_REVIEW]` and require the policy owner and qualified counsel.
+USHA DERMA must be designed for consent-aware processing, purpose limitation, data minimization, least-privilege access, secure storage and transfers, attributable audit logs, grievance/rights handling, and controlled retention/deletion. Health-record sharing must be explicit, purpose-bound, and revocable where applicable. The final notice, consent language, retention schedule, deletion exceptions, data roles, cross-border/storage decisions, and grievance process are `[NEEDS_REVIEW]` and require the policy owner and qualified counsel.
 
 The design review should consider the Digital Personal Data Protection Act, 2023 and current Digital Personal Data Protection Rules/notifications, together with ABDM Health Data Management Policy and consent guidance. Useful official references are the [MeitY DPDP Rules page](https://www.meity.gov.in/documents/act-and-policies/digital-personal-data-protection-rules-2025-gDOxUjMtQWa?hl=en-US) and [ABDM health-data and consent guidance](https://abdm.gov.in/abdm).
 
@@ -147,9 +147,9 @@ The baseline follows applicable Indian telemedicine operating principles: identi
 
 ### 7.3 Payments, refunds, and reconciliation
 
-Cashfree and Razorpay are approved candidate providers for the India baseline. Credentials, webhook secrets, merchant configuration, production enablement, provider contracts, and final compliance review remain pending. Payment flows must support Indian-standard handling for consent/authorization, failed transactions, refunds, cancellations, disputes, customer communication, settlement reconciliation, idempotency, and safe payment-data handling. ROOTINS must not store prohibited card data and must rely on provider-hosted/tokenized mechanisms as applicable.
+Cashfree and Razorpay are approved candidate providers for the India baseline. Credentials, webhook secrets, merchant configuration, production enablement, provider contracts, and final compliance review remain pending. Payment flows must support Indian-standard handling for consent/authorization, failed transactions, refunds, cancellations, disputes, customer communication, settlement reconciliation, idempotency, and safe payment-data handling. USHA DERMA must not store prohibited card data and must rely on provider-hosted/tokenized mechanisms as applicable.
 
-Payment implementation must be reviewed against current RBI payment-aggregator/payment-system requirements, including applicable rules for authorization, merchant/consumer protection, settlement, failed transactions, disputes, refunds, reconciliation, and security. See the [RBI payment-aggregator notification reference](https://www.rbi.org.in/scripts/NotificationUser.aspx?Id=11996). This reference does not establish that ROOTINS or either provider is compliant for a particular deployment.
+Payment implementation must be reviewed against current RBI payment-aggregator/payment-system requirements, including applicable rules for authorization, merchant/consumer protection, settlement, failed transactions, disputes, refunds, reconciliation, and security. See the [RBI payment-aggregator notification reference](https://www.rbi.org.in/scripts/NotificationUser.aspx?Id=11996). This reference does not establish that USHA DERMA or either provider is compliant for a particular deployment.
 
 ### 7.4 Pharmacy, delivery, backup, and reporting baseline
 
@@ -194,4 +194,4 @@ The following items remain open: `[NEEDS_REVIEW]` supported compliance obligatio
 - `[DECIDED BASELINE]` Cashfree and Razorpay are supported candidate providers behind a payment abstraction. Production onboarding, contracts, merchant setup, credentials, settlement, disputes, refunds, reconciliation, and grievance ownership remain deployment/review tasks.
 - `[PROPOSED]` Twilio Video is the first telehealth provider. Use room-scoped, short-lived access tokens; recording is disabled by default; consent, participant identity, access audit, and session traceability are required. Provider setup and Indian telemedicine review remain `[NEEDS_REVIEW]`.
 - `[PROPOSED]` Twilio Messaging/WhatsApp is the first SMS/WhatsApp provider and Twilio SendGrid is the first email provider. India sender/template/DLT, WhatsApp consent/opt-out, secrets, deliverability, and deployment configuration remain `[NEEDS_REVIEW]`.
-- `[PROPOSED]` ROOTINS operates internal pharmacy, inventory, and fulfilment for the first release. External pharmacy/commerce synchronization is deferred and provider-neutral; Shiprocket is the first shipping provider behind an adapter, subject to credentials, serviceability, labels, webhooks, and reconciliation review.
+- `[PROPOSED]` USHA DERMA operates internal pharmacy, inventory, and fulfilment for the first release. External pharmacy/commerce synchronization is deferred and provider-neutral; Shiprocket is the first shipping provider behind an adapter, subject to credentials, serviceability, labels, webhooks, and reconciliation review.

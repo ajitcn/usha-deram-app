@@ -27,8 +27,8 @@
 <script>
 (function () {
     'use strict';
-    if (window.rootinsPaymentStatusInlineBound) return;
-    window.rootinsPaymentStatusInlineBound = true;
+    if (window.ushaDermaPaymentStatusInlineBound) return;
+    window.ushaDermaPaymentStatusInlineBound = true;
     var modal = document.getElementById('paymentStatusModal');
     var form = document.getElementById('paymentStatusForm');
     if (!modal || !form) return;

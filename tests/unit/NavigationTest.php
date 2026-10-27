@@ -145,7 +145,7 @@ final class NavigationTest extends TestCase
         $theme = file_get_contents(ROOTPATH . 'app/Views/templates/theme1.php');
         $styles = file_get_contents(ROOTPATH . 'public/assets/css/style.css');
         self::assertStringContainsString('sidebarCollapseToggle', $theme);
-        self::assertStringContainsString('rootins-sidebar-collapsed', $theme);
+        self::assertStringContainsString('usha-derma-sidebar-collapsed', $theme);
         self::assertStringContainsString("setAttribute('title', label)", $theme);
         self::assertStringContainsString('sidebar-section-title', $theme);
         self::assertStringContainsString('sidebar-collapsed', $styles);
@@ -172,7 +172,7 @@ final class NavigationTest extends TestCase
         $theme = file_get_contents(ROOTPATH . 'app/Views/templates/theme1.php');
         self::assertStringContainsString("format: 'dd-mm-yyyy'", $theme);
         self::assertStringContainsString('window.setSharedDateValue', $theme);
-        self::assertStringContainsString('window.rootinsDateToIso', $theme);
+        self::assertStringContainsString('window.ushaDermaDateToIso', $theme);
         self::assertStringContainsString('return match && isValid(match[3], match[2], match[1])', $theme);
         self::assertStringContainsString("input[type=\"date\"]", $theme);
     }
@@ -180,11 +180,11 @@ final class NavigationTest extends TestCase
     public function testSharedAjaxAlwaysFinalizesTheGlobalPreloader(): void
     {
         $common = file_get_contents(ROOTPATH . 'public/assets/js/common.js');
-        self::assertStringContainsString('window.RootinsPreloader', $common);
+        self::assertStringContainsString('window.UshaDermaPreloader', $common);
         self::assertStringContainsString('timeout: 30000', $common);
         self::assertStringContainsString('request.complete = defaults.complete', $common);
         self::assertStringContainsString('finally {', $common);
-        self::assertStringContainsString("$(window).on('pageshow.rootinsPreloader load.rootinsPreloader'", $common);
-        self::assertStringContainsString("$(document).on('submit.rootinsPreloader'", $common);
+        self::assertStringContainsString("$(window).on('pageshow.ushaDermaPreloader load.ushaDermaPreloader'", $common);
+        self::assertStringContainsString("$(document).on('submit.ushaDermaPreloader'", $common);
     }
 }

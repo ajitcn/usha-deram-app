@@ -330,7 +330,7 @@ final class Pages extends BaseController
             $record['updated_at_display'] = $this->formatPatientDateTime($record['updated_at'] ?? null);
             $record['status_label'] = ucwords(str_replace('_', ' ', (string) ($record['status'] ?? '')));
             $record['items'] = $db->table('prescription_items')
-                ->select('medicine_name, duration, duration_unit, frequency, dosage, instructions, notes')
+                ->select('medicine_name, duration AS medicine_duration, duration, duration_unit, frequency, dosage, instructions, notes')
                 ->where('prescription_id', (int) $record['id'])
                 ->orderBy('id')
                 ->get()
@@ -548,7 +548,7 @@ final class Pages extends BaseController
         $query = $db->table('invoices')
             ->select(
                 'invoices.id, invoices.invoice_number, invoices.currency, invoices.subtotal, invoices.tax, '
-                . 'invoices.discount, invoices.total, invoices.status, invoices.payment_status, invoices.created_at, '
+                . 'invoices.discount, invoices.courier_charges, invoices.discount_type, invoices.discount_value, invoices.total, invoices.status, invoices.payment_status, invoices.created_at, '
                 . 'invoices.updated_at, orders.id AS order_id, orders.order_number, orders.status AS order_status, '
                 . 'orders.payment_provider, orders.payment_reference, orders.delivery_status, orders.delivery_provider, '
                 . 'orders.tracking_reference, prescriptions.id AS prescription_id, prescriptions.prescription_number, '
@@ -857,7 +857,7 @@ final class Pages extends BaseController
         }
 
         if ($table === 'medicine_orders') {
-            $builder->select('medicine_orders.*, prescriptions.prescription_number, prescriptions.prescription_date')
+            $builder->select('medicine_orders.*, prescriptions.prescription_number, prescriptions.prescription_date, prescriptions.medicine_duration')
                 ->join('prescriptions', 'prescriptions.id = medicine_orders.prescription_id')
                 ->where('prescriptions.patient_id', $context['patient_id'])
                 ->where('prescriptions.clinic_id', $context['clinic_id']);

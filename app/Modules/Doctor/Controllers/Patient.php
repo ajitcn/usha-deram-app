@@ -161,7 +161,7 @@ class Patient extends BaseController
             'search' => $search,
             'patient_name' => trim((string) $this->request->getGet('patient_name')),
             'mobile_number' => trim((string) $this->request->getGet('mobile_number')),
-            'source_type' => $this->patientFilterValue('source_type', ['self', 'shopify', 'unknown']),
+            'source_type' => $this->patientFilterValue('source_type', ['self', 'core_api', 'lead', 'unknown']),
             'status' => $this->patientFilterValue('status', ['0', '1']),
             'country_id' => $this->patientFilterId('country_id'),
             'state_id' => $this->patientFilterId('state_id'),
@@ -186,7 +186,7 @@ class Patient extends BaseController
         }
 
         $query = db_connect()->table('patients')
-            ->select('patients.id, patients.registration_number, patients.first_name, patients.middle_name, patients.last_name, patients.gender, patients.mobile_number, patients.mobile_normalized, patients.country_code, telephone_country_codes.normalized_code AS telephone_country_code, patients.status, patients.source_type, patients.created_at')
+            ->select('patients.id, patients.registration_number, patients.first_name, patients.middle_name, patients.last_name, patients.gender, patients.date_of_birth, patients.age, patients.mobile_number, patients.mobile_normalized, patients.country_code, telephone_country_codes.normalized_code AS telephone_country_code, patients.status, patients.source_type, patients.source_reference, patients.created_at')
             ->join('telephone_country_codes', 'telephone_country_codes.id = patients.telephone_country_code_id', 'left')
             ->where('patients.clinic_id', $context['clinic_id']);
         $this->applyDoctorPatientScope($query, $context);
@@ -205,7 +205,7 @@ class Patient extends BaseController
         }
 
         if ($filters['source_type'] === 'unknown') {
-            $query->groupStart()->where('patients.source_type IS NULL', null, false)->orWhereNotIn('patients.source_type', ['self', 'shopify'])->groupEnd();
+            $query->groupStart()->where('patients.source_type IS NULL', null, false)->orWhereNotIn('patients.source_type', ['self', 'core_api', 'lead'])->groupEnd();
         } elseif ($filters['source_type'] !== '') {
             $query->where('patients.source_type', $filters['source_type']);
         }
@@ -356,6 +356,11 @@ class Patient extends BaseController
                 $errors['date_of_birth'] = 'Date of birth cannot be in the future.';
             }
         }
+        $age = trim((string) $this->request->getPost('age'));
+
+        if ($age !== '' && (! ctype_digit($age) || (int) $age > 130)) {
+            $errors['age'] = 'Age must be a whole number from 0 to 130.';
+        }
         $mobile = trim((string) $this->request->getPost('mobile_number'));
 
         try {
@@ -430,7 +435,8 @@ class Patient extends BaseController
                 ? preg_replace('/^\+/', '', $postedCountryCode)
                 : null);
 
-        return ['clinic_id' => $clinicId, 'first_name' => trim((string) $this->request->getPost('first_name')), 'last_name' => trim((string) $this->request->getPost('last_name')), 'gender' => trim((string) $this->request->getPost('gender')) ?: null, 'date_of_birth' => $this->normalizeDate($this->request->getPost('date_of_birth')), 'email' => trim((string) $this->request->getPost('email')) ?: null, 'mobile_number' => trim((string) $this->request->getPost('mobile_number')) ?: null, 'country_code_id' => $telephoneCode['country_id'] ?? null, 'telephone_country_code_id' => $telephoneCountryCodeId, 'country_code' => $countryCode, 'telephone_country_name' => $manualCountryCode ? trim((string) $this->request->getPost('telephone_country_name')) : null, 'mobile_normalized' => preg_replace('/[^0-9]/', '', (string) $this->request->getPost('mobile_number')), 'address' => trim((string) $this->request->getPost('address')) ?: null, 'country_id' => $this->request->getPost('country_id') ?: null, 'state_id' => $this->request->getPost('state_id') ?: null, 'city_id' => $this->request->getPost('city_id') ?: null, 'locality_id' => $this->request->getPost('locality_id') ?: null, 'postal_code' => trim((string) $this->request->getPost('postal_code')) ?: null, 'country_name' => trim((string) $this->request->getPost('country_name')) ?: null, 'state_name' => trim((string) $this->request->getPost('state_name')) ?: null, 'city_name' => trim((string) $this->request->getPost('city_name')) ?: null, 'locality_name' => trim((string) $this->request->getPost('locality_name')) ?: null, 'status' => 1];
+        $postedAge = trim((string) $this->request->getPost('age'));
+        return ['clinic_id' => $clinicId, 'first_name' => trim((string) $this->request->getPost('first_name')), 'last_name' => trim((string) $this->request->getPost('last_name')), 'gender' => trim((string) $this->request->getPost('gender')) ?: null, 'date_of_birth' => $this->normalizeDate($this->request->getPost('date_of_birth')), 'age' => $postedAge === '' ? null : (int) $postedAge, 'email' => trim((string) $this->request->getPost('email')) ?: null, 'mobile_number' => trim((string) $this->request->getPost('mobile_number')) ?: null, 'country_code_id' => $telephoneCode['country_id'] ?? null, 'telephone_country_code_id' => $telephoneCountryCodeId, 'country_code' => $countryCode, 'telephone_country_name' => $manualCountryCode ? trim((string) $this->request->getPost('telephone_country_name')) : null, 'mobile_normalized' => preg_replace('/[^0-9]/', '', (string) $this->request->getPost('mobile_number')), 'address' => trim((string) $this->request->getPost('address')) ?: null, 'country_id' => $this->request->getPost('country_id') ?: null, 'state_id' => $this->request->getPost('state_id') ?: null, 'city_id' => $this->request->getPost('city_id') ?: null, 'locality_id' => $this->request->getPost('locality_id') ?: null, 'postal_code' => trim((string) $this->request->getPost('postal_code')) ?: null, 'country_name' => trim((string) $this->request->getPost('country_name')) ?: null, 'state_name' => trim((string) $this->request->getPost('state_name')) ?: null, 'city_name' => trim((string) $this->request->getPost('city_name')) ?: null, 'locality_name' => trim((string) $this->request->getPost('locality_name')) ?: null, 'status' => 1];
     }
 
     private function validation(array $errors): ResponseInterface

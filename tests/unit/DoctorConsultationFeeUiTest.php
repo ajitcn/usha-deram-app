@@ -16,8 +16,8 @@ final class DoctorConsultationFeeUiTest extends CIUnitTestCase
     {
         $controller = file_get_contents(ROOTPATH . 'app/Modules/Admin/Controllers/Doctor/DoctorConsultationFee.php');
 
-        self::assertSame('2026-08-20', rootins_parse_date('20-08-2026', false));
-        self::assertSame('20-08-2026', rootins_format_date('2026-08-20'));
+        self::assertSame('2026-08-20', usha_derma_parse_date('20-08-2026', false));
+        self::assertSame('20-08-2026', usha_derma_format_date('2026-08-20'));
         self::assertStringContainsString("'effective_from' => trim((string) \$this->request->getPost('effective_from'))", $controller);
         self::assertStringNotContainsString("'effective_from' => getYMD(", $controller);
         self::assertStringContainsString('$data = $validation[\'data\'];', $controller);
@@ -43,9 +43,9 @@ final class DoctorConsultationFeeUiTest extends CIUnitTestCase
 
     public function testFeeDateValidationCoversLeapAndInvalidDates(): void
     {
-        self::assertSame('2024-02-29', rootins_parse_date('29-02-2024', false));
-        self::assertNull(rootins_parse_date('29-02-2025', false));
-        self::assertNull(rootins_parse_date('31-04-2026', false));
-        self::assertNull(rootins_parse_date('', false));
+        self::assertSame('2024-02-29', usha_derma_parse_date('29-02-2024', false));
+        self::assertNull(usha_derma_parse_date('29-02-2025', false));
+        self::assertNull(usha_derma_parse_date('31-04-2026', false));
+        self::assertNull(usha_derma_parse_date('', false));
     }
 }

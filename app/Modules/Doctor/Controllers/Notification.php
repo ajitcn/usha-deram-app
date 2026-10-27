@@ -79,6 +79,33 @@ final class Notification extends BaseController
         return $this->response->setJSON(['status' => true, 'msg' => 'Notification marked as read.']);
     }
 
+    public function readAll(): ResponseInterface
+    {
+        if (!$this->request->isAJAX() || $this->request->getMethod(true) !== 'POST') {
+            return $this->response->setStatusCode(405)->setJSON(['status' => false, 'msg' => 'Invalid request.']);
+        }
+        $context = $this->context();
+
+        if ($context === null) {
+            return $this->response->setStatusCode(403)->setJSON(['status' => false, 'msg' => 'Doctor scope is invalid.']);
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $updated = $this->notifications
+            ->where('doctor_id', $context['doctor_id'])
+            ->where('clinic_id', $context['clinic_id'])
+            ->where('status', 'unread')
+            ->set(['status' => 'read', 'read_at' => $now, 'updated_at' => $now])
+            ->update();
+
+        if (!$updated) {
+            return $this->response->setStatusCode(500)->setJSON(['status' => false, 'msg' => 'Notifications could not be updated safely.']);
+        }
+        service('audit')->record('doctor.notifications_read_all', ['doctor_id' => $context['doctor_id'], 'clinic_id' => $context['clinic_id']]);
+
+        return $this->response->setJSON(['status' => true, 'msg' => 'All notifications marked as read.']);
+    }
+
     private function context(): ?array
     {
         if (!in_array('Doctor', session('roles') ?? [], true)) {

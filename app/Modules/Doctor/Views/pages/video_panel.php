@@ -44,7 +44,7 @@ $canOperate = in_array($status, ['waiting', 'active'], true);
     <?php if (! $configured): ?>
         <div class="doctor-video-provider-alert" role="status">
             <i class="bi bi-info-circle mr-2" aria-hidden="true"></i>
-            <div><strong>Video provider setup is pending</strong><span>The secure ROOTINS session is ready, but <?= esc($provider) ?> is not configured in this environment. No credentials or secrets are exposed here.</span></div>
+            <div><strong>Video provider setup is pending</strong><span>The secure USHA DERMA session is ready, but <?= esc($provider) ?> is not configured in this environment. No credentials or secrets are exposed here.</span></div>
         </div>
     <?php endif; ?>
 

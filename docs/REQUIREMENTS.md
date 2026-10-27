@@ -1,4 +1,4 @@
-# ROOTINS Requirements Register
+# USHA DERMA Requirements Register
 
 **Version:** 0.4 baseline  
 **Date:** 2026-08-29  
@@ -114,7 +114,7 @@ Requirement changes must update this register, `docs/SRS.md`, and—when archite
 - `[NEEDS_REVIEW]` India deployment privacy/medical-record rules, compliance mapping, and applicable legal obligations under DPDP/ABDM/telemedicine/RBI/tax/pharmacy/consumer requirements.
 - `[NEEDS_DECISION]` Patient identity verification, duplicate detection, and controlled merge policy.
 - `[NEEDS_REVIEW]` Cashfree/Razorpay production configuration, merchant onboarding, contracts, credentials/key ownership, settlement, disputes, refunds, reconciliation, grievance ownership, and production enablement.
-- `[NEEDS_REVIEW]` Deployment readiness for Twilio Video, Twilio Messaging/WhatsApp, Twilio SendGrid, internal ROOTINS pharmacy, and Shiprocket, including contracts, credentials, configuration, consent/template/DLT, serviceability, webhooks, reconciliation, and final compliance review.
+- `[NEEDS_REVIEW]` Deployment readiness for Twilio Video, Twilio Messaging/WhatsApp, Twilio SendGrid, internal USHA DERMA pharmacy, and Shiprocket, including contracts, credentials, configuration, consent/template/DLT, serviceability, webhooks, reconciliation, and final compliance review.
 - `[NEEDS_REVIEW]` Legal/medical confirmation of Pharmacy Assistant authority and proposed prescription states/reversal/amendment authority.
 - `[NEEDS_REVIEW]` Exact pharmacy/drug, inventory, batch/expiry, substitution, delivery, returns, cancellation, refund, and customer-support rules.
 - `[NEEDS_REVIEW]` Notification consent, opt-out, template, retry, and sensitive-content rules.
@@ -129,5 +129,5 @@ Requirement changes must update this register, `docs/SRS.md`, and—when archite
 | DOC-006 | Support Twilio Video with room-scoped short-lived tokens and no recording by default. | P1 | Access is limited to authorized participants, consent is recorded, and session access is auditable. |
 | PAT-007 | Support Twilio Messaging/WhatsApp notifications with Indian sender/template/DLT and consent/opt-out controls. | P1 | Notifications respect consent and provider delivery requirements; secrets are externalized. |
 | ADM-008 | Support Twilio SendGrid email through a provider abstraction. | P1 | SMTP/API secrets and deliverability settings are deployment-controlled and never exposed. |
-| FARM-007 | Operate internal ROOTINS pharmacy/inventory/fulfilment for the first release and defer external commerce synchronization. | P0 | Inventory and fulfilment remain provider-neutral; external commerce is not enabled in release one. |
+| FARM-007 | Operate internal USHA DERMA pharmacy/inventory/fulfilment for the first release and defer external commerce synchronization. | P0 | Inventory and fulfilment remain provider-neutral; external commerce is not enabled in release one. |
 | FARM-008 | Integrate Shiprocket through a shipping adapter for delivery workflows. | P1 | Serviceability, labels, webhooks, reconciliation, failures, and returns are recorded safely. |

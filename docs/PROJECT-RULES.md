@@ -1,12 +1,12 @@
-# ROOTINS Project Rules
+# USHA DERMA Project Rules
 
 **Status:** Baseline v0.4  
 **Date:** 2026-08-29  
-**Applies to:** All ROOTINS application code, database changes, integrations, and documentation
+**Applies to:** All USHA DERMA application code, database changes, integrations, and documentation
 
 ## 1. Purpose
 
-ROOTINS is a healthcare operations platform for clinic administration, doctor consultation, patient care records, prescriptions, and prescription-based medicine fulfilment. These rules are the project-level guardrails for implementing the requirements in `SRS.md` and `REQUIREMENTS.md`.
+USHA DERMA is a healthcare operations platform for clinic administration, doctor consultation, patient care records, prescriptions, and prescription-based medicine fulfilment. These rules are the project-level guardrails for implementing the requirements in `SRS.md` and `REQUIREMENTS.md`.
 
 ## 2. Architecture rules
 
@@ -63,7 +63,7 @@ ROOTINS is a healthcare operations platform for clinic administration, doctor co
 - Validate and authenticate inbound webhooks before business processing; tolerate duplicate and out-of-order delivery.
 - Store uploaded objects through the existing storage abstraction. For replacements, upload first, commit the database change, then clean up the old object.
 - Validate upload type, size, ownership, and access authorization before serving files.
-- Do not make production, DNS, database, queue, webhook, Shopify, R2, SMS, WhatsApp, or email configuration changes as part of ordinary feature work.
+- Do not make production, DNS, database, queue, webhook, R2, SMS, WhatsApp, or email configuration changes as part of ordinary feature work.
 - Treat provider credentials, merchant onboarding, telehealth configuration, retention schedules, and compliance settings as `NEEDS_REVIEW` until formally approved.
 - Pharmacy is an internal clinic/platform fulfilment role for the `[PROPOSED]` baseline; the staff role is presented as Pharmacy Assistant. External legal-entity fulfilment is out of scope until contracts, adapters, and legal review are approved.
 - Use the `[PROPOSED]` prescription states `draft`, `submitted`, `clarification_requested`, `approved`, `rejected`, `cancelled`, and `fulfilled`; preserve doctor instructions and require medical/admin authority for post-review amendment or reversal.
@@ -115,7 +115,7 @@ clinic/data scope, CSRF, audit, and safe-error contracts.
 Successful modal writes must remain on the current Doctor page and refresh only the
 affected list or context. Existing routes and business workflows remain the source
 of truth; this rule changes presentation and interaction, not authorization or
-clinical state rules. The shared `ri-scroll-modal` class and `RootinsModal`
+clinical state rules. The shared `ri-scroll-modal` class and `UshaDermaModal`
 behavior are the reference implementation for new Doctor modals.
 
 ## 9. Quality gates
@@ -140,5 +140,5 @@ A feature is done only when its requirements, authorization, validation, persist
 - Use provider abstractions for Cashfree/Razorpay payments, Twilio Video, Twilio Messaging/WhatsApp, Twilio SendGrid, and Shiprocket. Provider credentials, merchant onboarding, sender/template/DLT setup, serviceability, contracts, webhooks, settlement, reconciliation, and production enablement remain deployment-controlled and `[NEEDS_REVIEW]`.
 - Twilio Video sessions must use room-scoped short-lived access tokens, recording disabled by default, explicit consent, participant identity checks, and access/session audit events.
 - Twilio Messaging/WhatsApp must enforce Indian sender/template/DLT requirements and consent/opt-out controls. SendGrid deliverability and secrets must be configured without exposing sensitive values.
-- ROOTINS internal pharmacy/inventory/fulfilment is the `[PROPOSED]` first-release baseline. External pharmacy and commerce synchronization is deferred and provider-neutral; Shiprocket is the `[PROPOSED]` first shipping adapter.
+- USHA DERMA internal pharmacy/inventory/fulfilment is the `[PROPOSED]` first-release baseline. External pharmacy and commerce synchronization is deferred and provider-neutral; Shiprocket is the `[PROPOSED]` first shipping adapter.
 - ABDM/ABHA linking and consent-based exchange are `[PROPOSED]` out of scope for the first release and require sandbox, security, privacy, and compliance readiness before activation.

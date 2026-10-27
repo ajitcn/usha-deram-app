@@ -1,4 +1,4 @@
-<div class="doctor-appointment-table-wrap" role="region" aria-label="Appointment list">
+<div class="doctor-appointment-table-wrap table-responsive" role="region" aria-label="Appointment list">
     <table class="doctor-appointment-table">
         <caption class="sr-only">Doctor appointments with patient, appointment, service, queue, status, and available actions.</caption>
         <colgroup>
@@ -60,7 +60,7 @@
                     </div>
                 </td>
                 <td class="doctor-appointment-table-actions" data-label="Actions">
-                    <?= view(DOCTOR_VIEW . 'pages/appointments_actions', array_merge($item, compact('canConsult', 'canEdit', 'nextStatuses', 'canView', 'canFollowUp', 'canPrescription', 'canBilling'))) ?>
+                    <?= view(DOCTOR_VIEW . 'pages/appointments_actions', array_merge($item, compact('canConsult', 'canEdit', 'nextStatuses', 'canView', 'canFollowUp', 'canPrescription', 'canBilling', 'canCollectFee'))) ?>
                 </td>
             </tr>
         <?php endforeach; ?>

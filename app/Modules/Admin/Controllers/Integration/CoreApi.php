@@ -22,8 +22,8 @@ final class CoreApi extends BaseAdminController
             'canManage' => $this->hasPermission('core_api.manage'),
             'canCreate' => $this->hasPermission('core_api.create'),
             'clientExample' => <<<'PHP'
-$baseUrl = 'http://127.0.0.1/rootins/public';
-$path = '/api/v1/patients/register'; // Do not include /rootins/public here.
+$baseUrl = 'http://127.0.0.1/usha-derma/public';
+$path = '/api/v1/patients/register'; // Do not include /usha-derma/public here.
 $apiKeyId = 'YOUR_API_KEY_ID';
 $secret = 'YOUR_API_SECRET';
 $body = json_encode([
@@ -36,7 +36,7 @@ $body = json_encode([
 $timestamp = (string) time(); // Unix seconds, not milliseconds.
 $canonical = $timestamp . "\n" . "POST" . "\n" . $path . "\n" . $body;
 $signature = base64_encode(hash_hmac('sha256', $canonical, $secret, true));
-$idempotencyKey = 'shopify-patient-' . bin2hex(random_bytes(12));
+$idempotencyKey = 'core-api-patient-' . bin2hex(random_bytes(12));
 
 $curl = curl_init($baseUrl . $path);
 curl_setopt_array($curl, [
@@ -68,7 +68,7 @@ PHP,
         $rateLimit = (int) $this->request->getPost('rate_limit_per_minute');
         $rateLimit = $rateLimit > 0 ? $rateLimit : 60;
         if ($keyId === '') {
-            $keyId = 'rootins-app-' . bin2hex(random_bytes(4));
+            $keyId = 'usha-derma-app-' . bin2hex(random_bytes(4));
         }
         if (! preg_match('/^[A-Za-z0-9._-]{3,100}$/', $keyId)) {
             return $this->json(422, false, 'API key ID must use 3-100 letters, numbers, dots, underscores, or hyphens.');

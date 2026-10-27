@@ -36,8 +36,8 @@ class Prescription extends BaseAdminController
         $doctorId = (int) $this->request->getGet('doctor_id');
         $dateFromInput = trim((string) $this->request->getGet('date_from'));
         $dateToInput = trim((string) $this->request->getGet('date_to'));
-        $dateFrom = rootins_parse_date($dateFromInput);
-        $dateTo = rootins_parse_date($dateToInput);
+        $dateFrom = usha_derma_parse_date($dateFromInput);
+        $dateTo = usha_derma_parse_date($dateToInput);
         $pageSize = (int) $this->request->getGet('page_size');
         $pageSize = in_array($pageSize, [10, 15, 25, 50], true) ? $pageSize : 15;
         $query = $this->prescription->select('
@@ -46,6 +46,8 @@ class Prescription extends BaseAdminController
                 consultations.consultation_date,
                 consultations.consultation_time,
                 patients.registration_number,
+                patients.date_of_birth AS patient_date_of_birth,
+                patients.age AS patient_age,
                 patients.mobile_number AS patient_mobile,
                 patients.source_type AS patient_source,
                 patients.first_name AS patient_first_name,
@@ -86,7 +88,7 @@ class Prescription extends BaseAdminController
         }
         $prescriptions = $query->orderBy('prescriptions.prescription_date', 'DESC')->orderBy('prescriptions.id', 'DESC')->paginate($pageSize, 'prescriptions');
 
-        return view(ADMIN_VIEW . 'pages/prescription/index', ['prescriptions' => $prescriptions, 'pager' => $this->prescription->pager, 'filters' => ['search' => $search, 'status' => $status, 'clinic_id' => $clinicId ?: '', 'doctor_id' => $doctorId ?: '', 'date_from' => $dateFrom ? rootins_format_date($dateFrom) : $dateFromInput, 'date_to' => $dateTo ? rootins_format_date($dateTo) : $dateToInput, 'page_size' => $pageSize], 'clinics' => (new ClinicModel())->dropdown(), 'doctors' => (new DoctorModel())->select('id, first_name, last_name, doctor_code')->where('status', 1)->orderBy('first_name')->orderBy('last_name')->findAll(), 'consultations' => $this->consultation->select('
+        return view(ADMIN_VIEW . 'pages/prescription/index', ['prescriptions' => $prescriptions, 'pager' => $this->prescription->pager, 'filters' => ['search' => $search, 'status' => $status, 'clinic_id' => $clinicId ?: '', 'doctor_id' => $doctorId ?: '', 'date_from' => $dateFrom ? usha_derma_format_date($dateFrom) : $dateFromInput, 'date_to' => $dateTo ? usha_derma_format_date($dateTo) : $dateToInput, 'page_size' => $pageSize], 'clinics' => (new ClinicModel())->dropdown(), 'doctors' => (new DoctorModel())->select('id, first_name, last_name, doctor_code')->where('status', 1)->orderBy('first_name')->orderBy('last_name')->findAll(), 'consultations' => $this->consultation->select('
                     consultations.id,
                     consultations.consultation_number,
                     consultations.consultation_date,
@@ -293,7 +295,7 @@ class Prescription extends BaseAdminController
             return $this->validator->getErrors();
         }
 
-        return rootins_parse_date($this->request->getPost('prescription_date')) === null ? ['prescription_date' => 'Enter a valid prescription date as dd-mm-yyyy.'] : [];
+        return usha_derma_parse_date($this->request->getPost('prescription_date')) === null ? ['prescription_date' => 'Enter a valid prescription date as dd-mm-yyyy.'] : [];
     }
 
     private function selectedConsultation(): ?array
@@ -331,7 +333,8 @@ class Prescription extends BaseAdminController
             if ($quantity !== '' && (!is_numeric($quantity) || (float) $quantity < 0 || !preg_match('/^\d{1,8}(?:\.\d{1,2})?$/', $quantity))) {
                 $errors["items.{$index}.quantity"] = 'Quantity must be a non-negative number with up to 8 whole digits and 2 decimals.';
             }
-            $items[] = ['medicine_name' => $medicineName, 'dosage' => $this->itemString($item, 'dosage', 100, $errors, $index), 'frequency' => $this->itemString($item, 'frequency', 100, $errors, $index), 'duration' => $this->itemString($item, 'duration', 50, $errors, $index), 'duration_unit' => $this->itemString($item, 'duration_unit', 30, $errors, $index), 'instructions' => $this->itemText($item, 'instructions', $errors, $index), 'quantity' => $quantity === '' ? null : $quantity, 'notes' => $this->itemText($item, 'notes', $errors, $index)];
+            $duration = $this->itemString($item, 'duration', 50, $errors, $index);
+            $items[] = ['medicine_name' => $medicineName, 'dosage' => $this->itemString($item, 'dosage', 100, $errors, $index), 'frequency' => $this->itemString($item, 'frequency', 100, $errors, $index), 'medicine_duration' => $duration, 'duration' => $duration, 'duration_unit' => $this->itemString($item, 'duration_unit', 30, $errors, $index), 'instructions' => $this->itemText($item, 'instructions', $errors, $index), 'quantity' => $quantity === '' ? null : $quantity, 'notes' => $this->itemText($item, 'notes', $errors, $index)];
         }
 
         return $errors === [] ? ['data' => $items] : ['errors' => $errors];
@@ -361,7 +364,7 @@ class Prescription extends BaseAdminController
 
     private function prescriptionData(array $consultation): array
     {
-        return ['consultation_id' => (int) $consultation['id'], 'patient_id' => (int) $consultation['patient_id'], 'doctor_id' => (int) $consultation['doctor_id'], 'clinic_id' => (int) $consultation['clinic_id'], 'prescription_date' => rootins_parse_date($this->request->getPost('prescription_date')) ?? '', 'notes' => $this->nullableString('notes'), 'status' => (string) $this->request->getPost('status')];
+        return ['consultation_id' => (int) $consultation['id'], 'patient_id' => (int) $consultation['patient_id'], 'doctor_id' => (int) $consultation['doctor_id'], 'clinic_id' => (int) $consultation['clinic_id'], 'prescription_date' => usha_derma_parse_date($this->request->getPost('prescription_date')) ?? '', 'notes' => $this->nullableString('notes'), 'status' => (string) $this->request->getPost('status')];
     }
 
     private function insertItems(int $prescriptionId, array $items, string $timestamp): void
@@ -386,6 +389,8 @@ class Prescription extends BaseAdminController
                 consultations.consultation_date,
                 consultations.consultation_time,
                 patients.registration_number,
+                patients.date_of_birth AS patient_date_of_birth,
+                patients.age AS patient_age,
                 patients.email AS patient_email,
                 patients.source_type AS patient_source,
                 patients.mobile_number AS patient_mobile,

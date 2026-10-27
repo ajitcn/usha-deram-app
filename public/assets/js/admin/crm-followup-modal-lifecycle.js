@@ -1,8 +1,8 @@
 (function (window, document) {
     'use strict';
 
-    if (window.rootinsCrmFollowupModalLifecycleBound) return;
-    window.rootinsCrmFollowupModalLifecycleBound = true;
+    if (window.ushaDermaCrmFollowupModalLifecycleBound) return;
+    window.ushaDermaCrmFollowupModalLifecycleBound = true;
 
     function cleanup(modal) {
         if (!modal) return;
@@ -13,7 +13,7 @@
             backdrop.remove();
         });
         if (!document.querySelector('.modal.show')) {
-            document.body.classList.remove('modal-open', 'rootins-modal-lock');
+            document.body.classList.remove('modal-open', 'usha-derma-modal-lock');
             document.body.style.removeProperty('padding-right');
             document.body.style.removeProperty('overflow');
         }
@@ -49,7 +49,7 @@
         modal.classList.add('show');
         modal.style.display = 'block';
         modal.setAttribute('aria-hidden', 'false');
-        document.body.classList.add('modal-open', 'rootins-modal-lock');
+        document.body.classList.add('modal-open', 'usha-derma-modal-lock');
         document.body.style.overflow = 'hidden';
         window.setTimeout(function () {
             if (!document.querySelector('.modal-backdrop')) {

@@ -3,6 +3,8 @@ $appointmentId = (int) ($appointment['id'] ?? 0);
 $patientId = (int) ($appointment['patient_id'] ?? 0);
 $appointmentLabel = (string) ($appointment['appointment_number'] ?? ($appointmentId > 0 ? $appointmentId : 'appointment'));
 $canConsultNow = $canConsult && ! $consultationDatePassed && in_array($status, ['scheduled', 'confirmed', 'checked_in', 'in_queue'], true);
+$feeSummary = $appointment['fee_summary'] ?? [];
+$canCollectFee = ($canCollectFee ?? false) && ! empty($appointment['can_collect_fee']);
 ?>
 <div class="doctor-appointment-actions">
     <div class="doctor-appointment-action-group">
@@ -16,6 +18,7 @@ $canConsultNow = $canConsult && ! $consultationDatePassed && in_array($status, [
             || ($canFollowUp && ! empty($appointment['consultation_id']))
             || ($canPrescription && ! empty($appointment['prescription_id']))
             || $canBilling;
+            $hasSecondaryActions = $hasSecondaryActions || $canCollectFee;
 ?>
         <?php if ($hasSecondaryActions || $canView): ?>
             <div class="dropdown">
@@ -51,6 +54,7 @@ $canConsultNow = $canConsult && ! $consultationDatePassed && in_array($status, [
                 <?php if ($canBilling): ?>
                     <a class="dropdown-item" href="<?= base_url('doctor/billing?appointment_id=' . $appointmentId) ?>"><i class="bi bi-receipt mr-2" aria-hidden="true"></i>View Billing</a>
                 <?php endif; ?>
+                <?php if ($canCollectFee): ?><button class="dropdown-item js-consultation-fee" type="button" data-appointment-id="<?= $appointmentId ?>" data-appointment-number="<?= esc($appointmentLabel, 'attr') ?>" data-amount="<?= esc(number_format((float) ($feeSummary['remaining_amount'] ?? 0), 2, '.', ''), 'attr') ?>"><i class="bi bi-cash-coin mr-2" aria-hidden="true"></i>Collect Consultation Fee</button><?php endif; ?>
                 </div>
             </div>
         <?php endif; ?>

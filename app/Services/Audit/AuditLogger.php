@@ -20,7 +20,7 @@ final class AuditLogger
         $safeContext = $this->sanitize($context);
         $encodedContext = json_encode($safeContext, JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
         $event['context'] = $safeContext;
-        log_message('info', 'ROOTINS_AUDIT ' . json_encode($event, JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE));
+        log_message('info', 'USHA_DERMA_AUDIT ' . json_encode($event, JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE));
 
         try {
             $db = db_connect();

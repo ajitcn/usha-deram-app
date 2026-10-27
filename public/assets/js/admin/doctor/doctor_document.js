@@ -1,6 +1,10 @@
 (function ($) {
     'use strict';
 
+    // Let the shared actions-menu component portal and position row menus
+    // outside the horizontally scrolling table wrapper.
+    $('.doctor-document-actions .dropdown-toggle').attr('data-toggle', 'dropdown');
+
     function refreshSelects() {
         $('#doctorDocumentForm .btSelect').each(function () {
             if ($(this).data('selectpicker')) $(this).selectpicker('refresh');
@@ -76,21 +80,3 @@
 
     $('#doctorDocumentModal').on('hidden.bs.modal', function () { clearFormErrors('#doctorDocumentForm'); });
 }(jQuery));
-
-document.addEventListener('click', function (event) {
-    const toggle = event.target.closest('.doctor-document-actions .dropdown-toggle');
-    if (toggle) {
-        event.preventDefault();
-        event.stopPropagation();
-        const menu = toggle.parentElement.querySelector('.dropdown-menu');
-        document.querySelectorAll('.doctor-document-actions .dropdown-menu.show').forEach(function (openMenu) {
-            if (openMenu !== menu) openMenu.classList.remove('show');
-        });
-        menu.classList.toggle('show');
-        toggle.setAttribute('aria-expanded', menu.classList.contains('show') ? 'true' : 'false');
-        return;
-    }
-    if (!event.target.closest('.doctor-document-actions')) {
-        document.querySelectorAll('.doctor-document-actions .dropdown-menu.show').forEach(function (menu) { menu.classList.remove('show'); });
-    }
-});

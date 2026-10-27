@@ -40,17 +40,22 @@
                         <span><small>Prescription status</small><span class="badge badge-light" id="review-current-status">Not recorded</span></span>
                         <span><small id="review-date-label">Last updated</small><strong id="review-date">Not recorded</strong></span>
                         <span><small>Review status</small><span class="badge badge-light" id="review-state">Not recorded</span></span>
+                        <span id="review-duration-summary-wrap" class="d-none"><small>Duration Days</small><strong id="review-duration-summary"></strong></span>
                     </div>
                 </section>
                 <section class="review-modal-section" aria-labelledby="review-medicines-heading">
-                    <div class="review-modal-section-heading"><h3 class="review-modal-section-title" id="review-medicines-heading">Medicine details</h3><span class="text-muted small">Review the prescribed medicines before deciding.</span></div>
+                    <div class="review-modal-section-heading"><h3 class="review-modal-section-title" id="review-medicines-heading">Prescribed Medicines</h3><span class="text-muted small">Review the prescribed medicines before deciding.</span></div>
                     <div class="table-responsive review-modal-table-wrap">
                         <table class="table table-sm review-medicine-table mb-0">
                             <caption class="sr-only">Prescription medicines</caption>
-                            <thead><tr><th scope="col">Medicine</th><th scope="col">Duration</th><th scope="col">Frequency</th><th scope="col">Dose</th><th scope="col">Intake</th><th scope="col">Note</th></tr></thead>
+                            <thead><tr><th scope="col">Medicine</th><th scope="col">Duration</th><th scope="col">Frequency</th><th scope="col">Dose</th><th scope="col">Intake</th><th scope="col">Note</th><th scope="col">Dispensing Quantity</th></tr></thead>
                             <tbody id="review-medicine-rows"></tbody>
                         </table>
                     </div>
+                </section>
+                <section class="review-modal-section review-clarification-history d-none" aria-labelledby="review-clarification-history-heading">
+                    <div class="review-modal-section-heading"><h3 class="review-modal-section-title" id="review-clarification-history-heading">Clarification history</h3><span class="text-muted small">Questions and doctor responses are retained for pharmacy review.</span></div>
+                    <div id="review-clarification-history-content"></div>
                 </section>
                 <section class="review-modal-section review-modal-action-section" aria-labelledby="review-action-heading">
                     <div class="review-modal-section-heading"><h3 class="review-modal-section-title" id="review-action-heading">Review action</h3></div>
@@ -58,13 +63,14 @@
                         <?= csrf_field() ?>
                         <input type="hidden" name="prescription_id" id="review-prescription-id">
                         <input type="hidden" name="decision" id="review-decision">
-                        <div class="form-group review-reason-group mb-0"><label for="review-reason">Reason <span class="text-danger review-reason-required">*</span></label><textarea class="form-control" name="reason" id="review-reason" rows="3" maxlength="1000" placeholder="Explain this review decision"></textarea><div class="validation-error" id="reasonErr"></div></div>
+                        <div class="form-group review-clarification-item-group d-none"><label for="review-clarification-item">Medicine or prescription area</label><select class="form-control" name="clarification_item_id" id="review-clarification-item"><option value="0">Entire prescription</option></select><div class="small text-muted mt-1">Choose a medicine when the question is item-specific.</div><div class="validation-error" id="clarification_item_idErr"></div></div>
+                        <div class="form-group review-reason-group mb-0"><label for="review-reason">Reason <span class="text-danger review-reason-required">*</span></label><textarea class="form-control" name="reason" id="review-reason" rows="3" maxlength="1000" placeholder="Explain what the doctor needs to clarify"></textarea><div class="validation-error" id="reasonErr"></div></div>
                         <div class="form-group review-confirmation-group mb-0"><div class="custom-control custom-checkbox"><input class="custom-control-input" type="checkbox" value="1" name="approve_confirmation" id="review-approve-confirmation"><label class="custom-control-label" for="review-approve-confirmation">I confirm this prescription is ready for fulfilment</label></div><input type="hidden" name="approve_confirmation_text" id="review-approve-confirmation-text" value="I confirm this prescription is ready for fulfilment"><div class="validation-error" id="approve_confirmationErr"></div></div>
                         <div class="validation-error" id="decisionErr"></div>
                     </form>
                 </section>
             </div>
-            <div class="modal-footer pharmacy-prescription-modal-footer"><span class="text-muted small mr-auto" id="review-modal-help">Select a review action to continue.</span><button class="btn btn-light" type="button" data-dismiss="modal">Close</button><button class="btn btn-warning d-none review-submit-action" type="button" data-decision="clarification">Request clarification</button><button class="btn btn-danger d-none review-submit-action" type="button" data-decision="reject">Reject</button><button class="btn btn-outline-danger d-none review-submit-action" type="button" data-decision="cancel">Cancel</button><button class="btn btn-success d-none review-submit-action" type="button" data-decision="approve">Approve</button></div>
+            <div class="modal-footer pharmacy-prescription-modal-footer"><span class="text-muted small mr-auto" id="review-modal-help">Select a review action to continue.</span><button class="btn btn-light" type="button" data-dismiss="modal">Close</button><button class="btn btn-primary d-none review-submit-action" type="button" data-decision="save_quantities">Save dispensing quantities</button><button class="btn btn-warning d-none review-submit-action" type="button" data-decision="clarification">Request clarification</button><button class="btn btn-danger d-none review-submit-action" type="button" data-decision="reject">Reject</button><button class="btn btn-outline-danger d-none review-submit-action" type="button" data-decision="cancel">Cancel</button><button class="btn btn-success d-none review-submit-action" type="button" data-decision="approve">Approve</button></div>
         </div>
     </div>
 </div>

@@ -18,6 +18,22 @@ $errorId = uniqid('error', true);
     <script>
         <?= file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'debug.js') ?>
     </script>
+    <style>
+        .table-responsive { max-width: 100%; overflow-x: auto; overflow-y: visible; -webkit-overflow-scrolling: touch; }
+        .table-responsive table { min-width: 100%; max-width: none; }
+        .table-responsive th, .table-responsive td { max-width: 22rem; overflow-wrap: anywhere; word-break: break-word; }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('table').forEach(function (table) {
+                if (table.closest('.table-responsive')) return;
+                var wrapper = document.createElement('div');
+                wrapper.className = 'table-responsive';
+                table.parentNode.insertBefore(wrapper, table);
+                wrapper.appendChild(table);
+            });
+        });
+    </script>
 </head>
 <body onload="init()">
 

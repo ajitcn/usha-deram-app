@@ -12,11 +12,11 @@ final class LocalAdminUatSeeder extends Seeder
         if (!defined('ENVIRONMENT') || ENVIRONMENT !== 'development') {
             throw new RuntimeException('Local Admin UAT seeding is allowed only in development.');
         }
-        $email = trim((string) getenv('ROOTINS_TEST_ADMIN_EMAIL'));
-        $password = (string) getenv('ROOTINS_TEST_ADMIN_PASSWORD');
+        $email = trim((string) getenv('USHA_DERMA_TEST_ADMIN_EMAIL'));
+        $password = (string) getenv('USHA_DERMA_TEST_ADMIN_PASSWORD');
 
         if ($email === '' || $password === '') {
-            throw new RuntimeException('Set ROOTINS_TEST_ADMIN_EMAIL and ROOTINS_TEST_ADMIN_PASSWORD for local UAT.');
+            throw new RuntimeException('Set USHA_DERMA_TEST_ADMIN_EMAIL and USHA_DERMA_TEST_ADMIN_PASSWORD for local UAT.');
         }
         $db = $this->db;
         $clinic = $db->table('clinics')->select('id')->where('status', 1)->orderBy('id', 'ASC')->get(1)->getRowArray();

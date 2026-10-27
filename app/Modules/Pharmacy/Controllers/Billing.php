@@ -3,6 +3,7 @@
 namespace Pharmacy\Controllers;
 
 use App\Controllers\BaseController;
+use App\Services\Common\PatientPdfService;
 use CodeIgniter\HTTP\ResponseInterface;
 use Pharmacy\Services\BillingService;
 use Pharmacy\Services\PharmacyScope;
@@ -66,6 +67,85 @@ final class Billing extends BaseController
         }
     }
 
+    public function invoice(int $orderId): string|ResponseInterface
+    {
+        if (!$this->scope->can('pharmacy.billing.view')) {
+            return redirect()->to(base_url('permission-denied'));
+        }
+        $invoice = $this->billing->detail($orderId);
+        if ($invoice === null) {
+            return $this->response->setStatusCode(404)->setBody('Invoice not found.');
+        }
+
+        return view(PHARMACY_VIEW . 'pages/billing/invoice', ['invoice' => $invoice]);
+    }
+
+    public function invoicePreview(int $orderId): string|ResponseInterface
+    {
+        if (!$this->scope->can('pharmacy.billing.view')) {
+            return $this->response->setStatusCode(403)->setBody('You are not allowed to view this invoice.');
+        }
+
+        $invoice = $this->billing->detail($orderId);
+        if ($invoice === null) {
+            return $this->response->setStatusCode(404)->setBody('Invoice not found.');
+        }
+
+        return view(PHARMACY_VIEW . 'pages/billing/_invoice_content', ['invoice' => $invoice]);
+    }
+
+    public function invoicePdf(int $orderId): ResponseInterface
+    {
+        if (!$this->scope->can('pharmacy.billing.view')) {
+            return $this->response->setStatusCode(403)->setBody('You are not allowed to view this invoice.');
+        }
+        $invoice = $this->billing->detail($orderId);
+        if ($invoice === null) {
+            return $this->response->setStatusCode(404)->setBody('Invoice not found.');
+        }
+        return $this->invoicePdfResponse($invoice);
+    }
+
+    public function invoiceShare(int $orderId): ResponseInterface
+    {
+        if (!$this->scope->can('pharmacy.billing.view')) {
+            return $this->response->setStatusCode(403)->setBody('You are not allowed to share this invoice.');
+        }
+        $share = $this->billing->createInvoiceShare($orderId);
+        if ($share === null) {
+            return $this->response->setStatusCode(404)->setBody('Invoice not found.');
+        }
+
+        return redirect()->to(base_url('pharmacy/billing/invoice/shared/' . $share['token']));
+    }
+
+    public function sharedInvoice(string $token): string|ResponseInterface
+    {
+        $invoice = $this->billing->sharedInvoice($token);
+        if ($invoice === null) {
+            return $this->response->setStatusCode(404)->setBody('This invoice link is invalid or has expired.');
+        }
+
+        return view(PHARMACY_VIEW . 'pages/billing/invoice', ['invoice' => $invoice, 'isShared' => true]);
+    }
+
+    public function sharedInvoicePdf(string $token): ResponseInterface
+    {
+        $invoice = $this->billing->sharedInvoice($token);
+        if ($invoice === null) {
+            return $this->response->setStatusCode(404)->setBody('This invoice link is invalid or has expired.');
+        }
+
+        return $this->invoicePdfResponse($invoice);
+    }
+
+    private function invoicePdfResponse(array $invoice): ResponseInterface
+    {
+        $pdf = (new PatientPdfService())->generatePharmacyInvoice($invoice);
+        $fileKey = preg_replace('/[^A-Za-z0-9_-]/', '-', (string) ($invoice['invoice_number'] ?? $invoice['order_number'] ?? 'invoice')) ?: 'invoice';
+        return $this->response->setHeader('Content-Type', 'application/pdf')->setHeader('Content-Disposition', 'attachment; filename="usha-derma-invoice-' . $fileKey . '.pdf"')->setBody($pdf);
+    }
+
     public function reconcile(): ResponseInterface
     {
         if (!$this->scope->can('pharmacy.billing.payment.update')) {
@@ -74,6 +154,43 @@ final class Billing extends BaseController
             return $this->response->setStatusCode(403)->setJSON(['status' => false, 'msg' => 'You are not allowed to update payment status.']);
         }
         $result = $this->billing->reconcile((int) $this->request->getPost('order_id'), (string) $this->request->getPost('payment_status'), (string) $this->request->getPost('provider'), (string) $this->request->getPost('reference'), (string) $this->request->getPost('reason'), (string) $this->request->getPost('confirmation') === 'I confirm this payment was verified manually');
+
+        return $this->response->setStatusCode($result['http'])->setJSON($result['body']);
+    }
+
+    public function payment(): ResponseInterface
+    {
+        if (!$this->scope->can('pharmacy.billing.payment.update')) {
+            $this->scope->audit('pharmacy.permission_denied', ['permission' => 'pharmacy.billing.payment.update']);
+
+            return $this->response->setStatusCode(403)->setJSON(['status' => false, 'msg' => 'You are not allowed to record payments.']);
+        }
+
+        $paymentDate = trim((string) $this->request->getPost('payment_date'));
+        $paymentTime = trim((string) $this->request->getPost('payment_time'));
+        if ($paymentDate === '' && $paymentTime === '') {
+            $legacyPaidAt = trim((string) $this->request->getPost('paid_at'));
+            if ($legacyPaidAt !== '') {
+                $legacyDate = \DateTimeImmutable::createFromFormat('Y-m-d\\TH:i', $legacyPaidAt);
+                if ($legacyDate !== false) {
+                    $paymentDate = $legacyDate->format('Y-m-d');
+                    $paymentTime = $legacyDate->format('H:i');
+                }
+            }
+        }
+
+        $result = $this->billing->recordPayment(
+            (int) $this->request->getPost('order_id'),
+            trim((string) $this->request->getPost('amount')),
+            (string) $this->request->getPost('payment_method'),
+            (string) $this->request->getPost('provider'),
+            (string) $this->request->getPost('reference'),
+            (string) ($this->request->getPost('notes') ?? $this->request->getPost('reason')),
+            (string) $this->request->getPost('idempotency_key'),
+            (string) ($this->request->getPost('transaction_status') ?: 'succeeded'),
+            $paymentDate,
+            $paymentTime
+        );
 
         return $this->response->setStatusCode($result['http'])->setJSON($result['body']);
     }

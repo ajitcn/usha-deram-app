@@ -20,7 +20,7 @@ final class AddCoreApiAdminManagement extends Migration
 
         foreach (self::PERMISSIONS as [$module, $name, $key]) {
             if ($this->db->table('permissions')->where('permission_key', $key)->get()->getRowArray() === null) {
-                $this->db->table('permissions')->insert(['module' => $module, 'permission_name' => $name, 'permission_key' => $key, 'description' => 'Manage the ROOTINS Core API integration.', 'status' => 1, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]);
+                $this->db->table('permissions')->insert(['module' => $module, 'permission_name' => $name, 'permission_key' => $key, 'description' => 'Manage the USHA_DERMA Core API integration.', 'status' => 1, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]);
             }
         }
 

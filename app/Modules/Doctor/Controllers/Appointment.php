@@ -5,6 +5,7 @@ namespace Doctor\Controllers;
 use Admin\Models\Doctor\DoctorModel;
 use Admin\Models\User;
 use App\Controllers\BaseController;
+use App\Services\ConsultationFeePaymentService;
 use CodeIgniter\HTTP\RedirectResponse;
 
 class Appointment extends BaseController
@@ -42,6 +43,16 @@ class Appointment extends BaseController
         $prescription = $db->table('prescriptions')->select('prescription_number, prescription_date, status')->where('consultation_id', (int) ($consultation['id'] ?? 0))->where('doctor_id', $doctorId)->where('clinic_id', $clinicId)->get()->getRowArray();
         service('audit')->record('doctor.appointment_view', ['appointment_id' => $appointmentId, 'doctor_id' => $doctorId, 'clinic_id' => $clinicId]);
 
-        return view(DOCTOR_VIEW . 'pages/appointment', ['doctor' => $doctor, 'appointment' => $appointment, 'consultation' => $consultation, 'prescription' => $prescription]);
+        return view(DOCTOR_VIEW . 'pages/appointment', ['doctor' => $doctor, 'appointment' => $appointment, 'consultation' => $consultation, 'prescription' => $prescription, 'feeSummary' => (new ConsultationFeePaymentService())->summary($appointmentId, $clinicId, $doctorId), 'canCollectFee' => in_array('billing.edit', session('permissions') ?? [], true)]);
+    }
+
+    public function collectFee(int $appointmentId)
+    {
+        if (!$this->request->isAJAX() || $this->request->getMethod(true) !== 'POST') return $this->response->setStatusCode(405)->setJSON(['status' => false, 'msg' => 'Invalid request.']);
+        $user = (new User())->select('id, doctor_id')->where('id', (int) (session('user')['id'] ?? 0))->where('status', 1)->first();
+        $doctor = $user === null ? null : (new DoctorModel())->select('id, clinic_id')->where('id', (int) ($user['doctor_id'] ?? 0))->where('status', 1)->first();
+        if ($doctor === null) return $this->response->setStatusCode(403)->setJSON(['status' => false, 'msg' => 'Doctor scope is invalid.']);
+        $result = (new ConsultationFeePaymentService())->collect($appointmentId, $this->request->getPost(), (int) ($user['id'] ?? 0), (int) $doctor['clinic_id'], (int) $doctor['id']);
+        return $this->response->setStatusCode((int) $result['http'])->setJSON(['status' => (bool) $result['ok'], 'msg' => $result['message'], 'errors' => $result['errors'] ?? null, 'data' => $result['data'] ?? null]);
     }
 }

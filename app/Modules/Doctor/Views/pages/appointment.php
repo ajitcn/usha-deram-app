@@ -7,6 +7,7 @@
     $appointment['patient_last_name'] ?? '',
 ], static fn ($part) => $part !== null && $part !== ''))); ?>
 <?php $patientContact = service('telephoneContact')->formatDisplay($appointment['patient_telephone_country_code'] ?? null, $appointment['patient_mobile_normalized'] ?? $appointment['patient_mobile_number'] ?? null, $appointment['patient_legacy_country_code'] ?? null); ?>
+<?php $feeSummary = $feeSummary ?? []; $canCollectFee = $canCollectFee ?? false; ?>
 
 <main class="dashboard-container" aria-labelledby="doctor-appointment-title">
     <div class="page-heading">
@@ -25,6 +26,7 @@
                 <a class="btn btn-sm btn-outline-primary" href="<?= base_url('doctor/prescriptions') ?>">Prescriptions</a>
                 <a class="btn btn-sm btn-outline-primary" href="<?= base_url('doctor/follow-ups') ?>">Follow-ups</a>
                 <a class="btn btn-sm btn-outline-primary" href="<?= base_url('doctor/billing') ?>">Billing</a>
+                <?php if ($canCollectFee && !in_array((string) ($appointment['status'] ?? ''), ['cancelled', 'no_show'], true) && (float) ($feeSummary['remaining_amount'] ?? 0) > 0): ?><button type="button" class="btn btn-sm theme-btn js-consultation-fee" data-appointment-id="<?= (int) $appointment['id'] ?>" data-appointment-number="<?= esc($appointment['appointment_number'], 'attr') ?>" data-amount="<?= esc(number_format((float) ($feeSummary['remaining_amount'] ?? 0), 2, '.', ''), 'attr') ?>">Collect Consultation Fee</button><?php endif; ?>
             </div>
         </div>
         <div class="card-body">
@@ -34,6 +36,7 @@
                 <div class="col-md-6 mb-3"><strong>Type</strong><div><?= esc(ucwords(str_replace('_', ' ', (string) ($appointment['appointment_type'] ?? '')))) ?></div></div>
                 <div class="col-md-6 mb-3"><strong>Service</strong><div><?= esc($appointment['service_name'] ?? '—') ?></div></div>
                 <div class="col-md-6 mb-3"><strong>Status</strong><div><?= esc(ucwords(str_replace('_', ' ', (string) ($appointment['status'] ?? '')))) ?></div></div>
+                <div class="col-md-6 mb-3"><strong>Consultation Fee</strong><div><?= esc(number_format((float) ($feeSummary['consultation_fee'] ?? 0), 2)) ?> INR</div></div><div class="col-md-6 mb-3"><strong>Consultation Fee Paid</strong><div><?= esc(number_format((float) ($feeSummary['paid_amount'] ?? 0), 2)) ?> INR <span class="badge badge-light"><?= esc(ucwords(str_replace('_', ' ', (string) ($feeSummary['payment_status'] ?? 'unpaid')))) ?></span></div><?php if (!empty($feeSummary['payment_date'])): ?><small class="text-muted d-block"><?= esc($feeSummary['payment_date']) ?> · <?= esc($feeSummary['payment_method'] ?? 'Not recorded') ?> · <?= esc($feeSummary['receipt_number'] ?? $feeSummary['reference_number'] ?? 'No reference') ?></small><?php endif; ?></div>
                 <div class="col-12"><strong>Reason for visit</strong><div><?= nl2br(esc($appointment['reason_for_visit'] ?? '')) ?: '<span class="text-muted">Not provided.</span>' ?></div></div>
             </div>
         </div>
@@ -52,4 +55,5 @@
         </div></div></div>
     </div>
 </main>
+<?= view('parts/consultation_fee_modal', ['canCollectFee' => $canCollectFee && !in_array((string) ($appointment['status'] ?? ''), ['cancelled', 'no_show'], true) && (float) ($feeSummary['remaining_amount'] ?? 0) > 0, 'feeEndpoint' => base_url('doctor/appointments/collect-fee')]) ?>
 <?= $this->endSection() ?>

@@ -31,5 +31,5 @@ $pagerTotal = $pager?->getTotal('doctor_documents') ?? count($documents ?? []);
     </section>
 </main>
 <?= view(ADMIN_VIEW . 'pages/doctor/modals/_document') ?>
-<?= $this->section('scripts') ?><script src="<?= base_url('assets/js/admin/doctor/doctor_document.js?v=20261010.5') ?>"></script><?= $this->endSection() ?>
+<?= $this->section('scripts') ?><script src="<?= base_url('assets/js/admin/doctor/doctor_document.js?v=20261018.1') ?>"></script><?= $this->endSection() ?>
 <?= $this->endSection() ?>

@@ -1,4 +1,4 @@
-# ROOTINS CRM module
+# USHA DERMA CRM module
 
 CRM is exposed through the dedicated CRM namespace and module routes:
 

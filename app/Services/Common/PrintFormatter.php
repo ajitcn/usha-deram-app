@@ -4,7 +4,7 @@ namespace App\Services\Common;
 
 use DateTimeImmutable;
 
-/** Shared, display-only formatting for authorized ROOTINS print documents. */
+/** Shared, display-only formatting for authorized USHA DERMA print documents. */
 final class PrintFormatter
 {
     public static function date(?string $value): string
@@ -37,7 +37,7 @@ final class PrintFormatter
     public static function clinic(array $record): array
     {
         return [
-            'clinic_name' => (string) ($record['clinic_name'] ?? 'ROOTINS Clinic'),
+            'clinic_name' => (string) ($record['clinic_name'] ?? 'USHA DERMA Clinic'),
             'address' => (string) ($record['clinic_address'] ?? $record['address'] ?? ''),
             'mobile' => (string) ($record['clinic_mobile'] ?? $record['mobile'] ?? ''),
             'email' => (string) ($record['clinic_email'] ?? $record['email'] ?? ''),

@@ -52,7 +52,7 @@ body:has(#pharmacyDeliveryDetailModal) .modal-backdrop, body:has(#pharmacyDelive
     .pharmacy-delivery-page .pharmacy-delivery-filters .form-group.flex-grow-1 { grid-column: 1 / -1; width: 100%; }
     .pharmacy-delivery-page .pharmacy-filter-actions { grid-column: 1 / -1; width: 100%; margin-left: 0; }
     .pharmacy-delivery-page .pharmacy-filter-actions .btn { flex: 1 1 0; }
-    .pharmacy-delivery-table-wrap { overflow: visible; }
+    .pharmacy-delivery-table-wrap { overflow-x: auto; overflow-y: visible; }
     .pharmacy-delivery-table { display: block; min-width: 0; table-layout: auto; }
     .pharmacy-delivery-table thead { display: none; }
     .pharmacy-delivery-table tbody, .pharmacy-delivery-table tr { display: block; width: 100%; }
@@ -243,7 +243,7 @@ body > .pharmacy-delivery-list-actions-menu {
     .pharmacy-delivery-update-modal .delivery-update-wide { grid-column: auto; }
 }
 @media (max-width: 767.98px) {
-    .pharmacy-delivery-list-page .pharmacy-delivery-table-wrap { overflow: visible; }
+    .pharmacy-delivery-list-page .pharmacy-delivery-table-wrap { overflow-x: auto; overflow-y: visible; }
     .pharmacy-delivery-list-page .pharmacy-delivery-table {
         display: block;
         min-width: 0;

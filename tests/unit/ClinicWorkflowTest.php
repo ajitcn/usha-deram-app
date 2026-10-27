@@ -105,7 +105,7 @@ final class ClinicWorkflowTest extends TestCase
         self::assertStringContainsString("hasPermission('clinic.create')", $controller);
         self::assertStringContainsString("\$this->json(403, false, 'You do not have permission to perform this action.')", $controller);
 
-        $styles = file_get_contents(ROOTPATH . 'public/assets/css/rootins-monochrome.css');
+        $styles = file_get_contents(ROOTPATH . 'public/assets/css/usha-derma-monochrome.css');
         self::assertStringContainsString('#clinicModal .modal-content', $styles);
         self::assertStringContainsString('#clinicModal .modal-body', $styles);
         self::assertStringContainsString('overflow-y: auto', $styles);

@@ -1,4 +1,4 @@
-/* ROOTINS global status presentation normalizer.
+/* USHA DERMA global status presentation normalizer.
  * It only adds visual classes to already-rendered labels; it does not alter
  * status values, form controls, routes, requests, or business behaviour.
  */
@@ -27,7 +27,7 @@
     var toneForValue = function (value) {
         value = normalize(value);
 
-        if (/shopify|external source|external/.test(value)) return 'purple';
+        if (/external source|external/.test(value)) return 'purple';
         if (/self source|internal source|(^| )self( |$)|(^| )internal( |$)/.test(value)) return 'charcoal';
         if (/clarification required|clarification requested|near expiry|near-expiry|low stock|low-stock|(^| )warning( |$)/.test(value)) return 'orange';
         if (/failed|rejected|cancelled|canceled|returned|expired|no show|no-show/.test(value)) return 'red';
@@ -38,7 +38,7 @@
         return null;
     };
 
-    window.rootinsStatusTone = toneForValue;
+    window.ushaDermaStatusTone = toneForValue;
 
     var toneFor = function (element) {
         var classes = normalize(element.className && typeof element.className === 'string' ? element.className : '');

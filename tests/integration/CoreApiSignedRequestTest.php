@@ -8,7 +8,7 @@ final class CoreApiSignedRequestTest extends TestCase
 {
     public function testClientStyleSignatureIsAcceptedByPatientRegistration(): void
     {
-        $baseUrl = rtrim((string) (getenv('CORE_API_TEST_BASE_URL') ?: 'http://127.0.0.1/rootins/public'), '/');
+        $baseUrl = rtrim((string) (getenv('CORE_API_TEST_BASE_URL') ?: 'http://127.0.0.1/usha-derma/public'), '/');
         $apiKeyId = (string) getenv('CORE_API_TEST_KEY_ID');
         $secret = (string) getenv('CORE_API_TEST_SECRET');
         $clinicId = (int) getenv('CORE_API_TEST_CLINIC_ID');

@@ -58,7 +58,7 @@ final class MedicineAvailabilityService
         if ($this->scope->clinicId() === null) {
             return $empty;
         }
-        $query = db_connect()->table('medicine_inventory_batches AS batches')->select('batches.id AS batch_id, batches.medicine_id, batches.batch_number, batches.expiry_date, batches.quantity_available, batches.status AS batch_status, medicines.medicine_name, medicines.unit, medicines.dosage_form')->join('medicines', 'medicines.id = batches.medicine_id')->where('medicines.status', 'active');
+        $query = db_connect()->table('medicine_inventory_batches AS batches')->select('batches.id AS batch_id, batches.medicine_id, batches.batch_number, batches.expiry_date, batches.quantity_available, batches.status AS batch_status, medicines.medicine_name, medicines.unit, medicines.dosage_form, medicines.unit_price')->join('medicines', 'medicines.id = batches.medicine_id')->where('medicines.status', 'active');
 
         if ($search !== '') {
             $query->groupStart()->like('medicines.medicine_name', $search)->orLike('batches.batch_number', $search)->orLike('batches.status', $search)->groupEnd();
@@ -178,7 +178,7 @@ final class MedicineAvailabilityService
         $labels = ['available' => ['Available', 'success'], 'low_stock' => ['Low stock', 'warning'], 'out_of_stock' => ['Out of stock', 'danger'], 'expired' => ['Expired', 'danger'], 'inactive' => ['Inactive', 'secondary']];
         [$label, $class] = $labels[$status];
 
-        return ['batch_id' => (int) ($row['batch_id'] ?? 0), 'medicine_id' => (int) ($row['medicine_id'] ?? 0), 'medicine_name' => trim((string) ($row['medicine_name'] ?? '')) ?: 'Unnamed medicine', 'batch_number' => trim((string) ($row['batch_number'] ?? '')) ?: 'Not recorded', 'expiry_date' => $expiry?->format('Y-m-d'), 'expiry_display' => $expiry?->format('d-m-Y') ?? 'Not recorded', 'days_to_expiry' => $days, 'quantity_available' => $quantity, 'unit' => trim((string) ($row['unit'] ?? '')) ?: trim((string) ($row['dosage_form'] ?? '')) ?: 'Unit not recorded', 'status' => $status, 'availability_label' => $label, 'availability_class' => $class, 'expiry_label' => $expired ? 'Expired' : ($near ? 'Near expiry' : 'Valid'), 'expiry_class' => $expired ? 'danger' : ($near ? 'warning' : 'success'), 'is_near_expiry' => $near, 'is_available' => in_array($status, ['available', 'low_stock'], true)];
+        return ['batch_id' => (int) ($row['batch_id'] ?? 0), 'medicine_id' => (int) ($row['medicine_id'] ?? 0), 'medicine_name' => trim((string) ($row['medicine_name'] ?? '')) ?: 'Unnamed medicine', 'batch_number' => trim((string) ($row['batch_number'] ?? '')) ?: 'Not recorded', 'expiry_date' => $expiry?->format('Y-m-d'), 'expiry_display' => $expiry?->format('d-m-Y') ?? 'Not recorded', 'days_to_expiry' => $days, 'quantity_available' => $quantity, 'unit_price' => (float) ($row['unit_price'] ?? 0), 'unit' => trim((string) ($row['unit'] ?? '')) ?: trim((string) ($row['dosage_form'] ?? '')) ?: 'Unit not recorded', 'status' => $status, 'availability_label' => $label, 'availability_class' => $class, 'expiry_label' => $expired ? 'Expired' : ($near ? 'Near expiry' : 'Valid'), 'expiry_class' => $expired ? 'danger' : ($near ? 'warning' : 'success'), 'is_near_expiry' => $near, 'is_available' => in_array($status, ['available', 'low_stock'], true)];
     }
 
     private function today(): DateTimeImmutable

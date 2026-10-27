@@ -13,6 +13,7 @@ $canConsult = in_array('consultation.edit', session('permissions') ?? [], true);
 $canFollowUp = in_array('consultation.edit', session('permissions') ?? [], true);
 $canPrescription = in_array('prescription.view', session('permissions') ?? [], true);
 $canBilling = in_array('billing.view', session('permissions') ?? [], true);
+$canCollectFee = in_array('billing.edit', session('permissions') ?? [], true);
 $displayDate = static function ($value): string {
     $value = (string) ($value ?? '');
     $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
@@ -249,6 +250,7 @@ $hasActiveFilters = trim((string) ($filters['search'] ?? '')) !== ''
                     'canFollowUp' => $canFollowUp,
                     'canPrescription' => $canPrescription,
                     'canBilling' => $canBilling,
+                    'canCollectFee' => $canCollectFee,
                 ]) ?>
             </div>
         <?php else: ?>
@@ -376,6 +378,7 @@ $hasActiveFilters = trim((string) ($filters['search'] ?? '')) !== ''
         </div>
     </div>
 </div>
+<?= view('parts/consultation_fee_modal', ['canCollectFee' => $canCollectFee, 'feeEndpoint' => base_url('doctor/appointments/collect-fee')]) ?>
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>

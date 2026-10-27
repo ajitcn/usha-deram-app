@@ -73,6 +73,25 @@ final class Orders extends BaseController
         }
     }
 
+    public function prescription(int $prescriptionId): ResponseInterface
+    {
+        if (!$this->scope->can('pharmacy.order.create')) {
+            return $this->response->setStatusCode(403)->setJSON(['status' => false, 'msg' => 'You are not allowed to create orders.']);
+        }
+
+        try {
+            $prescription = $this->orders->approvedPrescriptionDetail($prescriptionId);
+
+            return $prescription === null
+                ? $this->response->setStatusCode(404)->setJSON(['status' => false, 'msg' => 'Approved prescription not found or already ordered.'])
+                : $this->response->setJSON(['status' => true, 'data' => ['prescription' => $prescription]]);
+        } catch (\Throwable $exception) {
+            log_message('error', 'Pharmacy prescription detail failed: ' . $exception->getMessage());
+
+            return $this->response->setStatusCode(500)->setJSON(['status' => false, 'msg' => 'Prescription details could not be loaded safely.']);
+        }
+    }
+
     public function labels(int $orderId): ResponseInterface
     {
         if (!$this->scope->can('pharmacy.order.label.view')) {
@@ -193,7 +212,18 @@ final class Orders extends BaseController
         }
 
         try {
-            $result = $this->orders->create((int) $this->request->getPost('prescription_id'));
+            $items = $this->request->getPost('items');
+            $pricing = [
+                'courier_charges' => $this->request->getPost('courier_charges'),
+                'discount_type' => $this->request->getPost('discount_type'),
+                'discount' => $this->request->getPost('discount'),
+                'tax' => $this->request->getPost('tax'),
+            ];
+            $result = $this->orders->create(
+                (int) $this->request->getPost('prescription_id'),
+                is_array($items) ? $items : [],
+                $pricing
+            );
 
             return $this->response->setStatusCode($result['http'])->setJSON($result['body']);
         } catch (\Throwable $exception) {

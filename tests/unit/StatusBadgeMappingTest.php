@@ -9,9 +9,9 @@ final class StatusBadgeMappingTest extends CIUnitTestCase
     public function testCanonicalStatusMappingContainsAllRequiredTones(): void
     {
         $source = file_get_contents(ROOTPATH . 'public/assets/js/status-colors.js');
-        $css = file_get_contents(ROOTPATH . 'public/assets/css/rootins-monochrome.css');
+        $css = file_get_contents(ROOTPATH . 'public/assets/css/usha-derma-monochrome.css');
 
-        self::assertStringContainsString('window.rootinsStatusTone', $source);
+        self::assertStringContainsString('window.ushaDermaStatusTone', $source);
         self::assertStringContainsString("if (/draft|inactive|unknown|not available", $source);
         self::assertStringContainsString("if (/(^| )active( |$)|(^| )available( |$)", $source);
         self::assertStringContainsString("warning( |$)", $source);

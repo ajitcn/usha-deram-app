@@ -1,4 +1,4 @@
-/* ROOTINS shared More Actions enhancement.
+/* USHA DERMA shared More Actions enhancement.
  * Presentation and keyboard behavior only; existing links, permissions,
  * delegated handlers, forms, and AJAX contracts remain untouched.
  */
@@ -76,7 +76,7 @@
     function portalMenu(wrapper) {
         var menu = wrapper._riActionsMenu || wrapper.querySelector('.ri-actions-menu');
         if (!menu || menu.parentNode === document.body || wrapper._riActionsPlaceholder) return;
-        var placeholder = document.createComment('rootins-actions-menu');
+        var placeholder = document.createComment('usha-derma-actions-menu');
         menu.parentNode.insertBefore(placeholder, menu);
         document.body.appendChild(menu);
         wrapper._riActionsPlaceholder = placeholder;
@@ -107,8 +107,8 @@
     function bind() {
         enhance(document);
         $(document)
-            .off('shown.bs.dropdown.rootinsActions', '.ri-actions-wrapper:not(.pharmacy-more-actions)')
-            .on('shown.bs.dropdown.rootinsActions', '.ri-actions-wrapper:not(.pharmacy-more-actions)', function () {
+            .off('shown.bs.dropdown.ushaDermaActions', '.ri-actions-wrapper:not(.pharmacy-more-actions)')
+            .on('shown.bs.dropdown.ushaDermaActions', '.ri-actions-wrapper:not(.pharmacy-more-actions)', function () {
                 portalMenu(this);
                 positionMenu(this);
                 var wrapper = this;
@@ -122,8 +122,8 @@
                 menu.find('.dropdown-item').attr('role', 'menuitem');
                 menuItems(menu).first().trigger('focus');
             })
-            .off('hidden.bs.dropdown.rootinsActions', '.ri-actions-wrapper:not(.pharmacy-more-actions)')
-            .on('hidden.bs.dropdown.rootinsActions', '.ri-actions-wrapper:not(.pharmacy-more-actions)', function () {
+            .off('hidden.bs.dropdown.ushaDermaActions', '.ri-actions-wrapper:not(.pharmacy-more-actions)')
+            .on('hidden.bs.dropdown.ushaDermaActions', '.ri-actions-wrapper:not(.pharmacy-more-actions)', function () {
                 var menu = this._riActionsMenu || this.querySelector('.ri-actions-menu');
                 if (menu) {
                     resetMenu(menu);
@@ -131,8 +131,8 @@
                 }
                 $(this).find('.ri-more-actions-toggle').attr('aria-expanded', 'false').trigger('blur');
             })
-            .off('keydown.rootinsActions', '.ri-actions-menu:not(.pharmacy-more-actions-menu)')
-            .on('keydown.rootinsActions', '.ri-actions-menu:not(.pharmacy-more-actions-menu)', function (event) {
+            .off('keydown.ushaDermaActions', '.ri-actions-menu:not(.pharmacy-more-actions-menu)')
+            .on('keydown.ushaDermaActions', '.ri-actions-menu:not(.pharmacy-more-actions-menu)', function (event) {
                 var items = menuItems(this);
                 if (!items.length) return;
                 if (event.key === 'Escape') {
@@ -147,7 +147,7 @@
                 var next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 : event.key === 'ArrowDown' ? (current + 1) % items.length : (current - 1 + items.length) % items.length;
                 items.eq(next).trigger('focus');
             });
-        $(window).off('resize.rootinsActions scroll.rootinsActions').on('resize.rootinsActions scroll.rootinsActions', function () {
+        $(window).off('resize.ushaDermaActions scroll.ushaDermaActions').on('resize.ushaDermaActions scroll.ushaDermaActions', function () {
             document.querySelectorAll('.ri-actions-wrapper:not(.pharmacy-more-actions)').forEach(function (wrapper) {
                 var menu = wrapper._riActionsMenu;
                 if (menu && menu.classList.contains('show')) positionMenu(wrapper);

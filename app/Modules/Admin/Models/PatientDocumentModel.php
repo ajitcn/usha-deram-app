@@ -27,8 +27,6 @@ class PatientDocumentModel extends Model
         'file_size',
         'mime_type',
         'source_type',
-        'shopify_store_domain',
-        'shopify_customer_id',
         'external_upload_reference',
         'upload_status',
         'review_message',

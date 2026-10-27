@@ -5,7 +5,7 @@
     <div class="patient-login-card">
         <section class="patient-login-brand" aria-label="Patient portal information">
             <div class="patient-login-logo"><i class="bi bi-heart-pulse" aria-hidden="true"></i></div>
-            <div class="page-eyebrow text-white-50">ROOTINS patient portal</div>
+            <div class="page-eyebrow text-white-50">USHA DERMA patient portal</div>
             <h1 class="h2 text-white mb-3">Your care, in one place.</h1>
             <p class="text-white-50 mb-0">Manage appointments, prescriptions, medicine orders, invoices, and clinic updates securely.</p>
         </section>

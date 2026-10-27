@@ -57,8 +57,8 @@ class DoctorLeave extends BaseAdminController
             return $this->response->setJSON(['status' => false, 'msg' => reset($formErr), 'errors' => $formErr]);
         }
 
-        $startDate = rootins_parse_date($this->request->getPost('start_date'), false);
-        $endDate = rootins_parse_date($this->request->getPost('end_date'), false);
+        $startDate = usha_derma_parse_date($this->request->getPost('start_date'), false);
+        $endDate = usha_derma_parse_date($this->request->getPost('end_date'), false);
         $dateErrors = [];
 
         if ($startDate === null) {

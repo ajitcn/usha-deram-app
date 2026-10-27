@@ -1,19 +1,19 @@
-# ROOTINS production bootstrap
+# USHA DERMA production bootstrap
 
 Run all migrations first. The bootstrap creates or reuses only the required
 roles, permissions, Super Admin account, role mappings, and safe reference
 catalog entries. It does not create a clinic or any patients, doctors,
 appointments, prescriptions, orders, invoices, payments, inventory, API
-credentials, or Shopify records.
+credentials.
 
 Set these values in the server environment or an untracked `.env` file:
 
 | Variable | Purpose |
 | --- | --- |
-| `ROOTINS_ADMIN_NAME` | Initial Super Admin display name |
-| `ROOTINS_ADMIN_EMAIL` | Initial Super Admin email; existing users are preserved |
-| `ROOTINS_ADMIN_PASSWORD` | Initial password; never printed or logged |
-| `ROOTINS_ADMIN_CLINIC_ID` | Existing active clinic used as a safety check |
+| `USHA_DERMA_ADMIN_NAME` | Initial Super Admin display name |
+| `USHA_DERMA_ADMIN_EMAIL` | Initial Super Admin email; existing users are preserved |
+| `USHA_DERMA_ADMIN_PASSWORD` | Initial password; never printed or logged |
+| `USHA_DERMA_ADMIN_CLINIC_ID` | Existing active clinic used as a safety check |
 
 Validate without writing:
 

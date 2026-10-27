@@ -1,4 +1,4 @@
-# ROOTINS Development Conventions
+# USHA DERMA Development Conventions
 
 ## Platform and Architecture
 
@@ -10,25 +10,17 @@
 
 ## Business Domain
 
-- ROOTINS is an online healthcare platform focused on doctor consultations, prescriptions, and prescription-based medicine delivery.
+- USHA DERMA is an online healthcare platform focused on doctor consultations, prescriptions, and prescription-based medicine delivery.
 - The platform includes Super Admin functionality for managing the application's operational data, users, roles, permissions, doctors, clinics, patients, consultations, prescriptions, medicines, and related workflows.
 - Doctor consultation is a core business workflow. Changes affecting consultation, doctor availability, scheduling, consultation fees, or related doctor workflows must preserve existing business rules.
 - Prescription management is a core business workflow. Prescription data may be used by downstream medicine-order and delivery workflows, so changes to prescription structure or processing must be reviewed across all consuming components before implementation.
 - Medicine delivery and order workflows may interact with external commerce systems. Do not assume that database records and external commerce records are independent.
-- Some parts of the application are integrated with Shopify through webhooks and related API integrations.
 - Business-critical workflows must be changed conservatively. Prefer small, isolated, backward-compatible changes unless a larger refactor is explicitly requested.
 
-## Shopify and External Integrations
-
-- Shopify is an external commerce integration used by parts of the medicine and order workflow.
-- Treat Shopify and other external services as integration boundaries.
 - Before modifying an integration, inspect the complete flow: route → controller/webhook handler → request validation/authentication → payload mapping → database changes → business workflow → external response.
-- Shopify webhook endpoints must use explicit routes.
 - Validate incoming webhook requests according to the existing integration implementation before processing business logic.
 - Webhook processing must tolerate duplicate webhook delivery where applicable. Do not blindly create duplicate database records from repeated events.
 - Do not assume webhook events will always arrive in the expected order.
-- Preserve existing Shopify payload mappings and database contracts unless a change is explicitly required.
-- Do not expose Shopify credentials, access tokens, webhook secrets, API keys, or other integration secrets in source code, JavaScript, views, logs, error responses, or commits.
 - Never hard-code external integration credentials. Use environment configuration.
 - Log integration failures with enough diagnostic information to troubleshoot the problem, but never log credentials, authorization headers, tokens, passwords, or other sensitive values.
 - External API failures must not leave partially completed database workflows when transactional consistency is required.
@@ -38,7 +30,7 @@
 ## Change Approval and Safety Rules
 
 - Before making destructive, potentially breaking, security-sensitive, production-impacting, or externally visible changes, explain the impact and wait for explicit approval.
-- Do not make production deployment, DNS, server, database, queue, cron, webhook, Shopify, R2, or external API configuration changes unless explicitly requested.
+- Do not make production deployment, DNS, server, database, queue, cron, webhook, R2, or external API configuration changes unless explicitly requested.
 - Do not drop, truncate, or recreate existing production tables.
 - Do not delete existing functionality merely because it appears unused without confirming that it is safe to remove.
 - Do not modify unrelated files or modules while implementing a requested feature.

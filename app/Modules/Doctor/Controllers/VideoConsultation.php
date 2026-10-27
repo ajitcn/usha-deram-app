@@ -71,7 +71,7 @@ final class VideoConsultation extends BaseController
                 return $this->json(409, false, 'This video consultation has ended and cannot be restarted.');
             }
             $now = date('Y-m-d H:i:s');
-            $data = ['appointment_id' => $appointmentId, 'patient_id' => (int) $appointment['patient_id'], 'doctor_id' => $context['doctor_id'], 'clinic_id' => $context['clinic_id'], 'provider' => $this->provider->providerName(), 'room_reference' => 'rootins-' . bin2hex(random_bytes(24)), 'status' => 'waiting', 'recording_enabled' => 0, 'recording_consent_state' => 'not_requested', 'created_at' => $now, 'updated_at' => $now];
+            $data = ['appointment_id' => $appointmentId, 'patient_id' => (int) $appointment['patient_id'], 'doctor_id' => $context['doctor_id'], 'clinic_id' => $context['clinic_id'], 'provider' => $this->provider->providerName(), 'room_reference' => 'usha-derma-' . bin2hex(random_bytes(24)), 'status' => 'waiting', 'recording_enabled' => 0, 'recording_consent_state' => 'not_requested', 'created_at' => $now, 'updated_at' => $now];
 
             if ($existing !== null) {
                 $this->sessions->update((int) $existing['id'], $data);

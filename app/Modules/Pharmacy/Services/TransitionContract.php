@@ -7,7 +7,7 @@ final class TransitionContract
     public const PRESCRIPTION_REVIEW = [
         'draft' => ['approved', 'rejected', 'clarification_requested', 'cancelled'],
         'submitted' => ['approved', 'rejected', 'clarification_requested', 'cancelled'],
-        'clarification_requested' => ['approved', 'rejected', 'clarification_requested', 'cancelled'],
+        'clarification_requested' => ['submitted', 'approved', 'rejected', 'clarification_requested', 'cancelled'],
         'approved' => ['approved'],
         'rejected' => ['rejected'],
         'cancelled' => ['cancelled'],

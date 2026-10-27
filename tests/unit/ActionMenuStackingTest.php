@@ -10,12 +10,12 @@ final class ActionMenuStackingTest extends CIUnitTestCase
     {
         $script = file_get_contents(ROOTPATH . 'public/assets/js/actions-menu.js');
         $pharmacyScript = file_get_contents(ROOTPATH . 'public/assets/js/pharmacy/more_actions.js');
-        $css = file_get_contents(ROOTPATH . 'public/assets/css/rootins-monochrome.css');
+        $css = file_get_contents(ROOTPATH . 'public/assets/css/usha-derma-monochrome.css');
 
         foreach (['portalMenu', 'restoreMenu', 'document.body.appendChild(menu)', 'Escape', 'positionMenu(wrapper)'] as $contract) {
             self::assertStringContainsString($contract, $script);
         }
-        foreach (['portalMenu', 'restoreMenu', 'rootins-pharmacy-actions-menu', 'document.body.appendChild(menu)'] as $contract) {
+        foreach (['portalMenu', 'restoreMenu', 'usha-derma-pharmacy-actions-menu', 'document.body.appendChild(menu)'] as $contract) {
             self::assertStringContainsString($contract, $pharmacyScript);
         }
         foreach (['--ri-z-page', '--ri-z-surface', '--ri-z-actions', '--ri-z-modal-backdrop', '--ri-z-modal', '--ri-z-preloader', '.ri-actions-menu--in-modal', 'overflow-x'] as $contract) {

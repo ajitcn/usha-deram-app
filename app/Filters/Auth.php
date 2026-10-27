@@ -23,7 +23,27 @@ class Auth implements FilterInterface
                 return service('response')->setStatusCode(401)->setJSON(['status' => false, 'msg' => 'Your session has expired. Please login again.']);
             }
 
-            return redirect()->to(base_url('system/login'))->with('error', 'Please login first.');
+            $target = trim(uri_string(), '/');
+            $query = $request->getUri()->getQuery();
+            $target = $target . ($query !== '' ? '?' . $query : '');
+            $loginUrl = base_url('system/login');
+
+            if ($target !== '' && !in_array($target, ['login', 'system/login'], true)) {
+                $loginUrl .= '?redirect=' . rawurlencode($target);
+            }
+
+            return redirect()->to($loginUrl)->with('error', 'Please login first.');
+        }
+
+        $userId = (int) ((session('user') ?? [])['id'] ?? 0);
+        if ($userId > 0 && db_connect()->tableExists('users') && db_connect()->fieldExists('password_changed_at', 'users')) {
+            $row = db_connect()->table('users')->select('password_changed_at')->where('id', $userId)->where('status', 1)->get()->getRowArray();
+            $sessionPasswordChangedAt = session('password_changed_at');
+            if ($row === null || (string) ($row['password_changed_at'] ?? '') !== (string) ($sessionPasswordChangedAt ?? '')) {
+                session()->destroy();
+                if ($request->isAJAX()) return service('response')->setStatusCode(401)->setJSON(['status' => false, 'msg' => 'Your session has expired. Please login again.']);
+                return redirect()->to(base_url('system/login'))->with('error', 'Your session has expired. Please login again.');
+            }
         }
     }
 

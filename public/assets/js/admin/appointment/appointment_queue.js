@@ -12,7 +12,7 @@ $(function () {
     const escapeHtml = value => $('<div>').text(value == null ? '' : value).html();
     const statusTone = status => ({ scheduled: 'blue', confirmed: 'blue', checked_in: 'amber', in_queue: 'orange', completed: 'green', cancelled: 'red', no_show: 'gray' })[status] || 'charcoal';
     function loadQueue() {
-        ajaxRequest({ url: ROUTES.appointments.queueData, method: 'GET', data: { clinic_id: $('#queueClinic').val(), appointment_date: window.rootinsDateToIso ? window.rootinsDateToIso('#queueDate') : $('#queueDate').val() }, success: function (response) {
+        ajaxRequest({ url: ROUTES.appointments.queueData, method: 'GET', data: { clinic_id: $('#queueClinic').val(), appointment_date: window.ushaDermaDateToIso ? window.ushaDermaDateToIso('#queueDate') : $('#queueDate').val() }, success: function (response) {
             if (!response.status) { showError(response.msg); return; }
             table.clear().add((response.data || []).map(row => ({ id: row.id, queue_position: row.queue_position, appointment_number: escapeHtml(row.appointment_number), patient: escapeHtml((row.patient_name || '') + (row.registration_number ? ' (' + row.registration_number + ')' : '')), doctor: escapeHtml(row.doctor_name), appointment_time: escapeHtml(row.appointment_time), appointment_type: escapeHtml(label(row.appointment_type)), checked_in_at: escapeHtml(row.checked_in_at || ''), status: '<span class="badge ri-status ri-status--' + statusTone(row.status) + '">' + escapeHtml(label(row.status)) + '</span>', actions: actionMarkup(row) }))).draw();
         } });

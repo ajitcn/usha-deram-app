@@ -3,9 +3,7 @@
 <?= $this->section('side-menu') ?>
 <aside id="sidebar" class="p-3 app-sidebar" aria-label="Patient panel navigation">
     <?php $path = trim(uri_string(), '/'); ?>
-    <?php $patientUser = session('user') ?? []; $displayName = trim((string) ($patientUser['username'] ?? 'Patient')) ?: 'Patient'; ?>
-    <div class="sidebar-brand"><span class="brand-img"><img src="<?= base_url('assets/img/logo.png') ?>" alt="ROOTINS"></span><span class="system-tag">Patient</span><button type="button" class="sidebar-close d-lg-none" data-sidebar-close aria-label="Close navigation"><i class="bi bi-x-lg" aria-hidden="true"></i></button></div>
-    <div class="sidebar-user"><span class="sidebar-avatar" aria-hidden="true"><?= esc(strtoupper(substr($displayName, 0, 1))) ?></span><span class="sidebar-user-copy"><strong><?= esc($displayName) ?></strong><small>Patient portal</small></span></div>
+    <div class="sidebar-brand"><span class="brand-img"><img src="<?= base_url('assets/img/logo.png') ?>" alt="USHA DERMA"></span><span class="system-tag">Patient</span><button type="button" class="sidebar-close d-lg-none" data-sidebar-close aria-label="Close navigation"><i class="bi bi-x-lg" aria-hidden="true"></i></button></div>
     <nav class="sidebar-nav" aria-label="Patient navigation">
         <?php $links = [
             'patient' => ['My dashboard', 'bi-grid'],
@@ -33,16 +31,15 @@
 <?= $this->section('footer') ?>
 <footer class="border-top bg-white px-3 py-3 text-muted small" aria-label="Patient portal footer">
     <div class="d-flex flex-wrap justify-content-between align-items-center">
-        <span>ROOTINS Patient Portal</span>
+        <span>USHA DERMA Patient Portal</span>
         <span><?= esc(date('Y')) ?> · Your clinic information is private.</span>
     </div>
 </footer>
 <?= $this->endSection() ?>
 
 <?= $this->section('top-menu') ?>
-<header class="sticky-top-area top-header"><div class="d-flex align-items-center"><button class="btn btn-sm btn-light d-lg-none mr-2" id="sidebarToggle" type="button" aria-label="Toggle navigation" aria-controls="sidebar"><i class="bi bi-list" aria-hidden="true"></i></button><div><span class="topbar-kicker">ROOTINS</span><span class="font-weight-bold d-block">Patient panel</span></div></div><div class="topbar-actions"><span class="topbar-avatar" aria-hidden="true"><i class="bi bi-person"></i></span><a class="btn btn-sm btn-light" href="<?= base_url('patient/logout') ?>"><i class="bi bi-box-arrow-right mr-1" aria-hidden="true"></i>Log out</a></div>
-</header>
+<?= view('parts/module_topbar', ['moduleLabel' => 'Patient panel', 'logoutUrl' => base_url('patient/logout')]) ?>
 <?= $this->endSection() ?>
 
-<script>window.rootinsPatientPdfBase = <?= json_encode(base_url('patient')) ?>;</script>
+<script>window.ushaDermaPatientPdfBase = <?= json_encode(base_url('patient')) ?>;</script>
 <script src="<?= base_url('assets/js/patient/pdf-downloads.js?v=20261015.2') ?>"></script>

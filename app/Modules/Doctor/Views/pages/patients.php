@@ -35,7 +35,7 @@
         </div>
         <div class="table-responsive">
             <table class="table mb-0" id="doctor-patients-table">
-                <thead><tr><th>Patient</th><th>Registration</th><th>Source</th><th>Gender</th><th>Mobile</th><th>Status</th><th class="text-right">Actions</th></tr></thead>
+                <thead><tr><th>Patient</th><th>Registration</th><th>Source</th><th>Gender</th><th>Date of Birth</th><th>Age</th><th>Mobile</th><th>Status</th><th class="text-right">Actions</th></tr></thead>
                 <tbody>
                 <?php foreach ($patients as $patient): ?>
                     <?php $patientName = trim(($patient['first_name'] ?? '') . ' ' . ($patient['middle_name'] ?? '') . ' ' . ($patient['last_name'] ?? '')); ?>
@@ -43,8 +43,10 @@
                     <tr>
                         <td><strong><?= esc($patientName) ?></strong></td>
                         <td><?= esc($patient['registration_number']) ?></td>
-                        <td><span class="badge <?= esc(patient_source_badge_class($patient['source_type'] ?? null)) ?>"><?= esc(patient_source_label($patient['source_type'] ?? null)) ?></span></td>
+                        <td><span class="badge <?= esc(patient_source_badge_class($patient['source_type'] ?? null)) ?>"><?= esc(patient_source_label($patient['source_type'] ?? null)) ?></span><?php if (trim((string) ($patient['source_reference'] ?? '')) !== ''): ?><small class="d-block text-muted">Reference: <?= esc($patient['source_reference']) ?></small><?php endif; ?></td>
                         <td><?= esc($patient['gender'] ?? '—') ?></td>
+                        <td><?= esc(usha_derma_format_date($patient['date_of_birth'] ?? '') ?: '—') ?></td>
+                        <td><?= ($patientAge = usha_derma_patient_age($patient['age'] ?? null, $patient['date_of_birth'] ?? null)) !== null ? esc($patientAge . ' years') : '—' ?></td>
                         <td><?= esc($patientContact) ?></td>
                         <td><span class="badge <?= (int) $patient['status'] === 1 ? 'badge-success' : 'badge-light' ?>"><?= (int) $patient['status'] === 1 ? 'Active' : 'Inactive' ?></span></td>
                         <td class="text-right"><a class="btn btn-sm btn-outline-primary mr-1" href="<?= base_url('doctor/patients/' . (int) $patient['id']) ?>" aria-label="View patient <?= esc($patientName) ?>">View</a><a class="btn btn-sm btn-outline-secondary" href="<?= base_url('doctor/patients/' . (int) $patient['id']) ?>#edit-doctor-patient" aria-label="Edit patient <?= esc($patientName) ?>">Edit</a></td>
@@ -88,7 +90,7 @@
                             <label for="doctor-filter-source">Source type</label>
                             <select id="doctor-filter-source" class="selectpicker form-control btSelect" data-live-search="true" title="All sources" name="source_type" aria-describedby="doctor_filter_source_typeErr">
                                 <option value="">All sources</option>
-                                <?php foreach (['self' => 'Self', 'shopify' => 'Shopify', 'unknown' => 'Unknown'] as $sourceValue => $sourceLabel): ?>
+                                <?php foreach (['self' => 'Self', 'core_api' => 'Core API', 'lead' => 'Lead', 'unknown' => 'Unknown'] as $sourceValue => $sourceLabel): ?>
                                     <option value="<?= esc($sourceValue) ?>" <?= ($filters['source_type'] ?? '') === $sourceValue ? 'selected' : '' ?>><?= esc($sourceLabel) ?></option>
                                 <?php endforeach; ?>
                             </select>
@@ -221,6 +223,12 @@
                                 <label for="new-patient-dob">Date of birth <span class="text-danger" aria-hidden="true">*</span><span class="sr-only">required</span></label>
                                 <input id="new-patient-dob" class="form-control datepicker" type="text" name="date_of_birth" data-submit-display-date="true" placeholder="dd-mm-yyyy" autocomplete="off" required>
                                 <div class="validation-error" id="date_of_birthErr"></div>
+                            </div>
+                            <div class="form-group col-md-4 col-12">
+                                <label for="new-patient-age">Age <small class="text-muted">(optional)</small></label>
+                                <input id="new-patient-age" class="form-control" type="number" name="age" min="0" max="130" step="1" inputmode="numeric" aria-describedby="age-help">
+                                <small id="age-help" class="form-text text-muted">Used when entered; otherwise calculated from Date of Birth.</small>
+                                <div class="validation-error" id="ageErr"></div>
                             </div>
                             <div class="col-12 doctor-patient-location-slot" aria-hidden="true"></div>
                             <div class="form-group col-md-4 col-12">

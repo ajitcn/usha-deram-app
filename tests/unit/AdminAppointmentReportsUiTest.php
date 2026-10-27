@@ -12,11 +12,11 @@ final class AdminAppointmentReportsUiTest extends CIUnitTestCase
         $controller = file_get_contents(ROOTPATH . 'app/Modules/Admin/Controllers/Appointment/Appointment.php');
         $view = file_get_contents(ROOTPATH . 'app/Modules/Admin/Views/pages/appointment/reports.php');
         $script = file_get_contents(ROOTPATH . 'public/assets/js/admin/appointment/appointment_reports.js');
-        $css = file_get_contents(ROOTPATH . 'public/assets/css/rootins-monochrome.css');
+        $css = file_get_contents(ROOTPATH . 'public/assets/css/usha-derma-monochrome.css');
 
         self::assertStringContainsString("'reports', 'Appointment::reports'", $routes);
         self::assertStringContainsString("'reports-data', 'Appointment::reportsData'", $routes);
-        foreach (['rootins_parse_date($dateFromInput)', 'To Date must be on or after From Date.', 'service_name', 'reportSummary', 'pagination'] as $contract) {
+        foreach (['usha_derma_parse_date($dateFromInput)', 'To Date must be on or after From Date.', 'service_name', 'reportSummary', 'pagination'] as $contract) {
             self::assertStringContainsString($contract, $controller);
         }
         foreach (['appointmentReportForm', 'reportDateFrom', 'reportDateTo', 'reportService', 'appointmentReportTable', 'appointmentReportPagination', 'printAppointmentReport'] as $contract) {

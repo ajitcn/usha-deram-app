@@ -1,7 +1,6 @@
-# ROOTINS Core API v1
+# USHA DERMA Core API v1
 
-The Core API is independent of the Shopify module. Shopify webhooks and
-Shopify-specific synchronization remain under `App\Modules\Shopify`.
+The Core API is an independent signed API for approved application clients.
 
 ## Authentication
 
@@ -22,7 +21,7 @@ Important client rules:
 
 - `timestamp` is Unix time in whole seconds as ASCII digits, not milliseconds.
 - The signed path is the route path only, such as `/api/v1/patients/register`.
-  Do not include the deployment prefix `/rootins/public` in the signed path.
+  Do not include the deployment prefix `/usha-derma/public` in the signed path.
 - The body is the exact bytes sent on the wire. JSON must be encoded once and
   the identical string must be used for both signing and the request body.
 - The digest is raw HMAC-SHA256 (`hash_hmac(..., true)`) encoded with base64.
@@ -35,7 +34,7 @@ Verified PHP/cURL example:
 
 ```php
 <?php
-$baseUrl = 'http://127.0.0.1/rootins/public';
+$baseUrl = 'http://127.0.0.1/usha-derma/public';
 $path = '/api/v1/patients/register';
 $apiKeyId = 'YOUR_API_KEY_ID';
 $secret = 'YOUR_API_SECRET';
@@ -50,7 +49,7 @@ $body = json_encode([
 $timestamp = (string) time();
 $canonical = $timestamp . "\n" . "POST" . "\n" . $path . "\n" . $body;
 $signature = base64_encode(hash_hmac('sha256', $canonical, $secret, true));
-$idempotencyKey = 'shopify-patient-' . bin2hex(random_bytes(12));
+$idempotencyKey = 'core-api-patient-' . bin2hex(random_bytes(12));
 
 $curl = curl_init($baseUrl . $path);
 curl_setopt_array($curl, [
@@ -93,7 +92,7 @@ credential and cannot be used to bypass data isolation.
 
 `POST /api/v1/patients` is retained for existing clients and is not part of
 the signed Core API v1 catalog above. It requires the legacy
-`Authorization: Bearer <ROOTINS_API_TOKEN>` configuration, applies its own
+`Authorization: Bearer <USHA_DERMA_API_TOKEN>` configuration, applies its own
 rate limit and payload validation, and preserves the existing response
 contract. New integrations must use the signed `/api/v1/patients/register`
 endpoint. Do not remove this route without coordinating client migration.

@@ -1,0 +1,706 @@
+/* Final orders-page cascade: layout and readability only. */
+.pharmacy-orders-page {
+    min-width: 0;
+    overflow-x: hidden;
+    color: #234e5c;
+}
+
+.pharmacy-orders-page .pharmacy-page-header {
+    align-items: flex-end;
+    margin-bottom: 16px;
+    padding: 0 0 6px;
+    border-bottom: 1px solid #d8e3e6;
+}
+
+.pharmacy-orders-page .pharmacy-page-title {
+    color: #234e5c;
+}
+
+.pharmacy-orders-page .pharmacy-page-actions {
+    align-items: stretch;
+}
+
+.pharmacy-orders-page .pharmacy-page-actions .btn-primary,
+.pharmacy-orders-page .pharmacy-filter-actions .btn-primary {
+    border-color: #234e5c;
+    background: #234e5c;
+    color: #fff;
+}
+
+.pharmacy-orders-page .pharmacy-page-actions .btn-primary:hover,
+.pharmacy-orders-page .pharmacy-page-actions .btn-primary:focus,
+.pharmacy-orders-page .pharmacy-filter-actions .btn-primary:hover,
+.pharmacy-orders-page .pharmacy-filter-actions .btn-primary:focus {
+    border-color: #16343e;
+    background: #16343e;
+    color: #fff;
+}
+
+.pharmacy-orders-page .pharmacy-orders-filters {
+    display: grid;
+    grid-template-columns: minmax(220px, 2fr) repeat(4, minmax(112px, 1fr)) repeat(2, minmax(120px, 1fr)) auto;
+    align-items: end;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 14px;
+    border-color: #d8e3e6;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(22, 52, 62, .06);
+}
+
+.pharmacy-orders-page .pharmacy-orders-filters .form-group,
+.pharmacy-orders-page .pharmacy-filter-actions {
+    min-width: 0;
+    margin: 0;
+}
+
+.pharmacy-orders-page .pharmacy-orders-filters .form-group.flex-grow-1 {
+    flex: none;
+    min-width: 0;
+}
+
+.pharmacy-orders-page .pharmacy-orders-filters label {
+    color: #234e5c;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.pharmacy-orders-page .pharmacy-orders-filters .form-control {
+    width: 100%;
+    min-width: 0;
+    border-color: #b9c9ce;
+    color: #234e5c;
+}
+
+.pharmacy-orders-page .pharmacy-filter-actions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+}
+
+.pharmacy-orders-page .pharmacy-orders-card {
+    min-width: 0;
+    overflow: visible;
+    border-color: #d8e3e6;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(22, 52, 62, .06);
+}
+
+.pharmacy-orders-page .pharmacy-orders-table-wrap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+}
+
+.pharmacy-orders-page .pharmacy-orders-table {
+    width: 100%;
+    min-width: 1160px;
+    table-layout: fixed;
+    color: #234e5c;
+}
+
+.pharmacy-orders-page .pharmacy-orders-table th,
+.pharmacy-orders-page .pharmacy-orders-table td {
+    min-width: 0;
+    vertical-align: top;
+}
+
+.pharmacy-orders-page .pharmacy-orders-table thead th {
+    padding: 13px 12px;
+    border-bottom: 2px solid #c3a56d;
+    background: #eef4f5;
+    color: #234e5c;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.pharmacy-orders-page .pharmacy-orders-table th:nth-child(1) { width: 18%; }
+.pharmacy-orders-page .pharmacy-orders-table th:nth-child(2) { width: 15%; }
+.pharmacy-orders-page .pharmacy-orders-table th:nth-child(3) { width: 9%; }
+.pharmacy-orders-page .pharmacy-orders-table th:nth-child(4) { width: 23%; }
+.pharmacy-orders-page .pharmacy-orders-table th:nth-child(5) { width: 10%; }
+.pharmacy-orders-page .pharmacy-orders-table th:nth-child(6) { width: 17%; }
+.pharmacy-orders-page .pharmacy-orders-table th:nth-child(7) { width: 8%; }
+
+.pharmacy-orders-page .pharmacy-orders-table tbody td {
+    padding: 14px 12px;
+    border-color: #e7eef0;
+    overflow-wrap: anywhere;
+}
+
+.pharmacy-orders-page .pharmacy-orders-table tbody tr:hover {
+    background: #f7fafb;
+}
+
+.pharmacy-orders-page .pharmacy-order-stack {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pharmacy-orders-page .pharmacy-order-stack .order-value,
+.pharmacy-orders-page .pharmacy-order-stack .order-meta {
+    display: block;
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
+}
+
+.pharmacy-orders-page .pharmacy-order-stack .order-value {
+    color: #16343e;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+.pharmacy-orders-page .pharmacy-order-stack .order-meta {
+    color: #5c7077;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.pharmacy-orders-page .pharmacy-orders-table td:nth-child(3),
+.pharmacy-orders-page .pharmacy-orders-table td:nth-child(5),
+.pharmacy-orders-page .pharmacy-orders-table td:nth-child(7) {
+    text-align: center;
+}
+
+.pharmacy-orders-page .pharmacy-orders-table td:nth-child(4) .pharmacy-order-stack {
+    align-items: stretch;
+}
+
+.pharmacy-orders-page .pharmacy-orders-table .order-amount {
+    display: block;
+    margin-top: 3px;
+    color: #16343e;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.pharmacy-orders-page .pharmacy-orders-table .order-count-badge,
+.pharmacy-orders-page .pharmacy-orders-table .badge {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+
+.pharmacy-orders-page .pharmacy-orders-table .badge {
+    justify-content: center;
+    min-height: 24px;
+    padding: 5px 8px;
+    font-size: 10px;
+    line-height: 1.2;
+}
+
+.pharmacy-orders-page .order-actions-cell {
+    width: 1%;
+    min-width: 110px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.pharmacy-orders-page .order-actions-cell .pharmacy-more-actions {
+    display: inline-flex;
+    max-width: 100%;
+}
+
+.pharmacy-orders-page .pharmacy-pagination {
+    min-width: 0;
+    gap: 12px;
+    padding: 12px 14px;
+    border-top-color: #d8e3e6;
+}
+
+.pharmacy-orders-page .ri-pagination-summary {
+    min-width: 0;
+    color: #5c7077;
+    overflow-wrap: anywhere;
+}
+
+.pharmacy-orders-page .ri-pagination-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+.pharmacy-orders-page .pharmacy-order-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
+    gap: 16px;
+    min-width: 0;
+    align-items: stretch;
+}
+
+.pharmacy-orders-page .pharmacy-order-card {
+    min-width: 0;
+    height: 100%;
+    min-height: 100%;
+    overflow: visible;
+    border-color: #d8e3e6;
+    box-shadow: 0 4px 16px rgba(22, 52, 62, .06);
+}
+
+.pharmacy-orders-page .pharmacy-order-card .order-value,
+.pharmacy-orders-page .pharmacy-order-card .order-meta,
+.pharmacy-orders-page .pharmacy-order-card .order-card-wrap,
+.pharmacy-orders-page .pharmacy-order-card .order-tracking-summary {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
+}
+
+.pharmacy-orders-page .pharmacy-order-card .order-card-summary strong {
+    color: #16343e;
+    font-variant-numeric: tabular-nums;
+}
+
+.pharmacy-orders-page .pharmacy-order-card .order-card-footer {
+    margin-top: auto;
+}
+
+@media (max-width: 1100px) {
+    .pharmacy-orders-page .pharmacy-orders-filters {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .pharmacy-orders-page .pharmacy-orders-filters .form-group.flex-grow-1,
+    .pharmacy-orders-page .pharmacy-filter-actions {
+        grid-column: span 2;
+    }
+
+    .pharmacy-orders-page .pharmacy-order-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    .pharmacy-orders-page .pharmacy-page-header {
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .pharmacy-orders-page .pharmacy-page-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .pharmacy-orders-page .pharmacy-orders-filters {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .pharmacy-orders-page .pharmacy-orders-filters .form-group.flex-grow-1,
+    .pharmacy-orders-page .pharmacy-filter-actions {
+        grid-column: 1 / -1;
+    }
+
+    .pharmacy-orders-page .pharmacy-filter-actions .btn {
+        flex: 1 1 0;
+    }
+
+    .pharmacy-orders-page .pharmacy-orders-table {
+        min-width: 1160px;
+    }
+
+    .pharmacy-orders-page .pharmacy-orders-table td:nth-child(3),
+    .pharmacy-orders-page .pharmacy-orders-table td:nth-child(5),
+    .pharmacy-orders-page .pharmacy-orders-table td:nth-child(7) {
+        text-align: left;
+    }
+
+    .pharmacy-orders-page .pharmacy-orders-table td.order-actions-cell {
+        text-align: left;
+    }
+
+    .pharmacy-orders-page .pharmacy-order-grid {
+        grid-template-columns: 1fr;
+        grid-auto-rows: auto;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .pharmacy-orders-page .pharmacy-orders-filters {
+        display: block;
+    }
+
+    .pharmacy-orders-page .pharmacy-orders-filters .form-group,
+    .pharmacy-orders-page .pharmacy-filter-actions {
+        width: 100%;
+        margin-bottom: 9px;
+    }
+
+    .pharmacy-orders-page .pharmacy-filter-actions {
+        margin-bottom: 0;
+    }
+
+    .pharmacy-orders-page .pharmacy-page-actions .btn,
+    .pharmacy-orders-page .pharmacy-filter-actions .btn {
+        min-height: 36px;
+    }
+
+    .pharmacy-orders-page .pharmacy-order-card {
+        height: auto;
+        min-height: 0;
+        padding: 14px;
+    }
+
+    .pharmacy-orders-page .pharmacy-pagination {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .pharmacy-orders-page .ri-pagination-controls {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
+/* Rebuilt grid cards. These selectors intentionally use a separate namespace
+   so the list/table view keeps its existing layout contract. */
+.pharmacy-orders-page .pharmacy-order-grid-card {
+    display: flex;
+    min-height: 0;
+    padding: 18px;
+    border: 1px solid #d8e3e6;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 7px 22px rgba(22, 52, 62, .08);
+    color: #234e5c;
+    gap: 0;
+}
+
+.pharmacy-orders-page .pharmacy-order-grid-card:hover {
+    border-color: #c3a56d;
+    box-shadow: 0 10px 28px rgba(22, 52, 62, .13);
+}
+
+.pharmacy-orders-page .pharmacy-order-card-header {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid #c3a56d;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-heading {
+    min-width: 0;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-eyebrow,
+.pharmacy-orders-page .pharmacy-order-card-label,
+.pharmacy-orders-page .pharmacy-order-card-footer-label {
+    display: block;
+    color: #6d858c;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .07em;
+    line-height: 1.25;
+    text-transform: uppercase;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-number {
+    margin: 5px 0 6px;
+    color: #16343e;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-date {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 6px;
+    color: #5c7077;
+    font-size: 11px;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-date i {
+    flex: 0 0 auto;
+    color: #c3a56d;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-header > .badge {
+    flex: 0 0 auto;
+    max-width: 42%;
+    white-space: normal;
+    text-align: center;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-section {
+    min-width: 0;
+    margin: 0;
+    padding: 14px 0;
+    border-bottom: 1px solid #e7eef0;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-patient {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-field,
+.pharmacy-orders-page .pharmacy-order-card-reference > span {
+    min-width: 0;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-value,
+.pharmacy-orders-page .pharmacy-order-card-reference strong {
+    display: block;
+    margin-top: 4px;
+    color: #16343e;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-reference {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-section-heading {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: #234e5c;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-count,
+.pharmacy-orders-page .pharmacy-order-card-invoice {
+    min-width: 0;
+    color: #6d858c;
+    font-size: 10px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+    text-align: right;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-medicine-names {
+    display: -webkit-box;
+    min-height: 36px;
+    margin: 8px 0 10px;
+    color: #5c7077;
+    font-size: 11px;
+    line-height: 1.45;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-metric {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+    color: #6d858c;
+    font-size: 11px;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-metric + .pharmacy-order-card-metric {
+    border-top: 1px solid #f0f4f5;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-metric strong {
+    min-width: 0;
+    color: #234e5c;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+    text-align: right;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-price-list {
+    margin: 8px 0 0;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-price-list > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(100px, auto);
+    align-items: center;
+    gap: 12px;
+    min-height: 28px;
+    border-bottom: 1px solid #f0f4f5;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-price-list dt,
+.pharmacy-orders-page .pharmacy-order-card-price-list dd {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-price-list dt {
+    color: #6d858c;
+    font-weight: 600;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-price-list dd {
+    color: #234e5c;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-price-list .pharmacy-order-card-discount {
+    color: #765100;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-price-list .pharmacy-order-card-total {
+    min-height: 44px;
+    margin-top: 5px;
+    border-top: 2px solid #c3a56d;
+    border-bottom: 0;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-total dt,
+.pharmacy-orders-page .pharmacy-order-card-total dd {
+    color: #16343e;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-statuses {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-status {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-status .badge {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-meta {
+    max-width: 100%;
+    color: #5c7077;
+    font-size: 10px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-footer {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 14px;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-footer .pharmacy-more-actions {
+    flex: 0 1 auto;
+    min-width: 0;
+    margin-left: auto;
+}
+
+.pharmacy-orders-page .pharmacy-order-card-footer .pharmacy-more-actions-toggle {
+    max-width: 100%;
+}
+
+.pharmacy-orders-page .pharmacy-orders-grid-empty {
+    grid-column: 1 / -1;
+    min-height: 260px;
+    border: 1px dashed #b9c9ce;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.pharmacy-orders-page .pharmacy-orders-grid-empty i {
+    color: #c3a56d;
+    font-size: 34px;
+}
+
+@media (max-width: 767.98px) {
+    .pharmacy-orders-page .pharmacy-order-grid-card {
+        padding: 16px;
+    }
+
+    .pharmacy-orders-page .pharmacy-order-card-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .pharmacy-orders-page .pharmacy-order-card-footer .pharmacy-more-actions {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .pharmacy-orders-page .pharmacy-order-card-footer .pharmacy-more-actions-toggle {
+        width: 100%;
+    }
+}
+
+@media (max-width: 420px) {
+    .pharmacy-orders-page .pharmacy-order-card-reference,
+    .pharmacy-orders-page .pharmacy-order-card-statuses {
+        grid-template-columns: 1fr;
+    }
+
+    .pharmacy-orders-page .pharmacy-order-card-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .pharmacy-orders-page .pharmacy-order-card-header > .badge {
+        max-width: 100%;
+    }
+}
+.pharmacy-order-kpis{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:.75rem;margin:0 0 1rem}.pharmacy-order-kpi{display:flex;flex-direction:column;justify-content:space-between;min-height:86px;padding:.85rem 1rem;background:#fff;border:1px solid #d9e3e5;border-top:3px solid #c3a56d;border-radius:.65rem;color:#234e5c;box-shadow:0 4px 14px rgba(35,78,92,.06);text-decoration:none;transition:transform .15s ease,box-shadow .15s ease,background .15s ease}.pharmacy-order-kpi:hover,.pharmacy-order-kpi:focus{background:#f4f8f8;color:#16343e;text-decoration:none;transform:translateY(-1px);box-shadow:0 7px 18px rgba(35,78,92,.12)}.pharmacy-order-kpi.is-active{background:#234e5c;color:#fff;border-color:#234e5c}.pharmacy-order-kpi span{font-size:.73rem;font-weight:700;line-height:1.2}.pharmacy-order-kpi strong{font-size:1.55rem;line-height:1;margin-top:.55rem}@media(max-width:1100px){.pharmacy-order-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}@media(max-width:650px){.pharmacy-order-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}.pharmacy-order-kpi{min-height:76px;padding:.7rem .75rem}.pharmacy-order-kpi strong{font-size:1.3rem}}
+
+/* Final semantic status layer: presentation only; raw values remain available to filters/actions. */
+.pharmacy-status-badge{display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;max-width:100%;min-height:24px;padding:4px 9px;border:1px solid transparent;border-radius:999px;font-size:.72rem;font-weight:800;line-height:1.2;letter-spacing:.01em;text-align:center;white-space:nowrap;overflow-wrap:normal}
+.pharmacy-status-badge.pharmacy-status-badge--pending{color:#805e09;background:#fff3d6;border-color:#efd48d}
+.pharmacy-status-badge.pharmacy-status-badge--approved{color:#1d5e8a;background:#e7f2fb;border-color:#b8d5ea}
+.pharmacy-status-badge.pharmacy-status-badge--processing{color:#146b72;background:#e4f6f5;border-color:#abdeda}
+.pharmacy-status-badge.pharmacy-status-badge--success{color:#1d7449;background:#e5f6ed;border-color:#b9dec9}
+.pharmacy-status-badge.pharmacy-status-badge--partial{color:#875f05;background:#fff0d0;border-color:#e4c377}
+.pharmacy-status-badge.pharmacy-status-badge--danger{color:#a23f46;background:#fde8e8;border-color:#e7b7ba}
+.pharmacy-status-badge.pharmacy-status-badge--refunded{color:#5c4b8a;background:#eee9fb;border-color:#d3c8ee}
+.pharmacy-status-badge.pharmacy-status-badge--neutral{color:#586779;background:#eef1f5;border-color:#d7dfe8}
+.pharmacy-orders-page .pharmacy-status-badge{vertical-align:middle}
+@media (max-width: 575.98px){.pharmacy-status-badge{max-width: min(100%, 15rem)}}
+@media (min-width: 768px) and (max-width: 1280px){.pharmacy-orders-page .pharmacy-orders-filters{grid-template-columns:repeat(4,minmax(0,1fr))}.pharmacy-orders-page .pharmacy-orders-filters .form-group.flex-grow-1,.pharmacy-orders-page .pharmacy-filter-actions{grid-column:span 2}}
+.pharmacy-orders-page .pharmacy-order-card-header > .pharmacy-status-badge{min-width:78px;max-width:100%;white-space:nowrap}

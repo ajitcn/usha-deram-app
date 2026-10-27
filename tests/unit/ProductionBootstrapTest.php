@@ -27,7 +27,7 @@ final class ProductionBootstrapTest extends CIUnitTestCase
     public function testRequiredEnvironmentValuesAreValidatedWithoutEmbeddingCredentials(): void
     {
         $source = $this->commandSource() . $this->serviceSource();
-        foreach (['ROOTINS_ADMIN_NAME', 'ROOTINS_ADMIN_EMAIL', 'ROOTINS_ADMIN_PASSWORD', 'ROOTINS_ADMIN_CLINIC_ID'] as $name) {
+        foreach (['USHA_DERMA_ADMIN_NAME', 'USHA_DERMA_ADMIN_EMAIL', 'USHA_DERMA_ADMIN_PASSWORD', 'USHA_DERMA_ADMIN_CLINIC_ID'] as $name) {
             $this->assertStringContainsString($name, $source);
         }
         $this->assertStringNotContainsString('password_hash(', $this->commandSource());
@@ -65,7 +65,7 @@ final class ProductionBootstrapTest extends CIUnitTestCase
     public function testBootstrapDoesNotCreateClinicalOrCommerceRecords(): void
     {
         $source = strtolower($this->serviceSource());
-        foreach (['insert.*patients', 'insert.*doctors', 'insert.*appointments', 'insert.*orders', 'insert.*shopify'] as $pattern) {
+        foreach (['insert.*patients', 'insert.*doctors', 'insert.*appointments', 'insert.*orders'] as $pattern) {
             $this->assertDoesNotMatchRegularExpression('/' . $pattern . '/', $source);
         }
     }

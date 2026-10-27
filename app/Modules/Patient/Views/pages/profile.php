@@ -10,6 +10,7 @@ $patientName = trim(implode(' ', array_filter([
 $displayDateOfBirth = !empty($patient['date_of_birth']) && strtotime((string) $patient['date_of_birth']) !== false
     ? date('d-m-Y', strtotime((string) $patient['date_of_birth']))
     : '';
+$displayAge = usha_derma_patient_age($patient['age'] ?? null, $patient['date_of_birth'] ?? null);
 ?>
 
 <main class="patient-profile-shell" aria-labelledby="patient-profile-title">
@@ -58,6 +59,12 @@ $displayDateOfBirth = !empty($patient['date_of_birth']) && strtotime((string) $p
                     <label for="patient-profile-date-of-birth">Date of birth</label>
                     <input id="patient-profile-date-of-birth" class="form-control datepicker" type="text" name="date_of_birth" data-submit-display-date="true" value="<?= esc($displayDateOfBirth) ?>" placeholder="dd-mm-yyyy" autocomplete="off">
                     <div class="validation-error" id="date_of_birthErr"></div>
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="patient-profile-age">Age</label>
+                    <input id="patient-profile-age" class="form-control" type="number" name="age" min="0" max="130" step="1" inputmode="numeric" value="<?= esc((string) ($patient['age'] ?? '')) ?>" placeholder="Optional">
+                    <small class="form-text text-muted"><?= $displayAge !== null ? 'Displayed age: ' . esc($displayAge . ' years') : 'Leave blank to use Date of Birth.' ?></small>
+                    <div class="validation-error" id="ageErr"></div>
                 </div>
             </div>
         </section>

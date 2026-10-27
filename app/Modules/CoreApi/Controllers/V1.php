@@ -31,7 +31,7 @@ final class V1 extends BaseController
             $payload['clinic_id'] = (new CoreApiClinicResolver())->activeClinicId($payload['clinic_id'] ?? 0);
             unset($payload['source_type']);
             try {
-                $result = (new PatientRegistrationService())->register($payload, null, ['source_type' => 'shopify', 'source_reference' => trim((string) ($payload['source_reference'] ?? ''))]);
+                $result = (new PatientRegistrationService())->register($payload, null, ['source_type' => 'core_api', 'source_reference' => trim((string) ($payload['source_reference'] ?? ''))]);
             } catch (\InvalidArgumentException $exception) {
                 throw new CoreApiException(422, 'VALIDATION_FAILED', 'Review the patient fields.', ['patient' => $exception->getMessage()]);
             }

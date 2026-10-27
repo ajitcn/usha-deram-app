@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 
 final class CoreApiContractTest extends TestCase
 {
-    public function testVersionedCoreApiRoutesAreIndependentFromShopify(): void
+    public function testVersionedCoreApiRoutesExposeOnlyTheCoreApiSurface(): void
     {
         $routes = file_get_contents(ROOTPATH . 'app/Modules/CoreApi/Config/Routes.php');
 
@@ -16,7 +16,6 @@ final class CoreApiContractTest extends TestCase
         self::assertStringContainsString("appointments/availability", $routes);
         self::assertStringContainsString("appointments/book", $routes);
         self::assertStringContainsString("prescriptions/upload", $routes);
-        self::assertStringNotContainsString('Shopify', $routes);
     }
 
     public function testCoreApiStorageUsesCredentialScopedIdempotency(): void

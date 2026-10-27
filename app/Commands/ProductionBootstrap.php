@@ -14,9 +14,9 @@ use Throwable;
  */
 final class ProductionBootstrap extends BaseCommand
 {
-    protected $group = 'ROOTINS';
+    protected $group = 'USHA DERMA';
     protected $name = 'production:bootstrap';
-    protected $description = 'Safely initialize required ROOTINS production data.';
+    protected $description = 'Safely initialize required USHA DERMA production data.';
     protected $usage = 'production:bootstrap [--dry-run] [--confirm-production]';
     protected $options = [
         '--dry-run' => 'Validate configuration and report planned changes without writing.',
@@ -34,10 +34,10 @@ final class ProductionBootstrap extends BaseCommand
         }
 
         $input = [
-            'name' => getenv('ROOTINS_ADMIN_NAME') ?: '',
-            'email' => getenv('ROOTINS_ADMIN_EMAIL') ?: '',
-            'password' => getenv('ROOTINS_ADMIN_PASSWORD') ?: '',
-            'clinic_id' => getenv('ROOTINS_ADMIN_CLINIC_ID') ?: '',
+            'name' => getenv('USHA_DERMA_ADMIN_NAME') ?: '',
+            'email' => getenv('USHA_DERMA_ADMIN_EMAIL') ?: '',
+            'password' => getenv('USHA_DERMA_ADMIN_PASSWORD') ?: '',
+            'clinic_id' => getenv('USHA_DERMA_ADMIN_CLINIC_ID') ?: '',
         ];
 
         try {

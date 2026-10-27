@@ -204,6 +204,6 @@ class CrmFollowUpWorkflowService
 
     private function date(string $value): ?string
     {
-        return function_exists('rootins_parse_date') ? rootins_parse_date($value) : null;
+        return function_exists('usha_derma_parse_date') ? usha_derma_parse_date($value) : null;
     }
 }

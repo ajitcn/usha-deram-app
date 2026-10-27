@@ -12,7 +12,7 @@ final class DoctorNotification extends Model
 
     protected $returnType = 'array';
 
-    protected $allowedFields = ['doctor_id', 'clinic_id', 'title', 'message', 'channel', 'status', 'read_at', 'created_at', 'updated_at'];
+    protected $allowedFields = ['doctor_id', 'clinic_id', 'title', 'message', 'channel', 'status', 'read_at', 'related_entity_type', 'related_entity_id', 'event_key', 'created_at', 'updated_at'];
 
     protected $useTimestamps = false;
 }

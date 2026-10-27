@@ -1,0 +1,288 @@
+/*
+ * Shared mobile safety layer.
+ *
+ * This file is intentionally loaded after the module styles.  The application
+ * has several older page-specific responsive rules; keeping this layer small
+ * and scoped to the mobile breakpoints prevents those rules from reintroducing
+ * page-level overflow while leaving the desktop cascade unchanged.
+ */
+
+@media (max-width: 991.98px) {
+    html,
+    body {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    #content-wrapper,
+    #main-content,
+    .dashboard-container,
+    .pharmacy-page,
+    .pharmacy-dashboard,
+    .doctor-page,
+    .patient-page,
+    .admin-shell #main-content,
+    .admin-shell .dashboard-container {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    #main-content > *,
+    .dashboard-container > *,
+    .pharmacy-page > *,
+    .pharmacy-dashboard > *,
+    .doctor-page > *,
+    .patient-page > * {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .top-header,
+    .usha-module-topbar-header {
+        min-width: 0;
+    }
+
+    .top-header .d-flex,
+    .usha-module-topbar-header .d-flex,
+    .usha-topbar-leading,
+    .usha-topbar-actions {
+        min-width: 0;
+    }
+
+    .btn,
+    button.btn,
+    a.btn,
+    .btn-tabler-icon,
+    .usha-topbar-account-toggle,
+    .sidebar-toggle,
+    .sidebar-close,
+    .nav-link,
+    .submenu-link,
+    .dropdown-toggle {
+        min-height: 40px;
+    }
+
+    .btn-tabler-icon,
+    .sidebar-toggle,
+    .sidebar-close {
+        min-width: 40px;
+    }
+
+    .form-control,
+    .custom-select,
+    .bootstrap-select > .dropdown-toggle,
+    .input-group-text {
+        min-height: 42px;
+    }
+
+    textarea.form-control {
+        min-height: 88px;
+    }
+
+    .table-responsive,
+    .audit-table-wrap,
+    .doctor-document-table-wrap,
+    .doctor-prescription-table-wrap,
+    .patient-order-medicine-table-wrap,
+    [class*="table-wrap"] {
+        max-width: 100%;
+        overflow-x: auto !important;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table-responsive > table,
+    .table-responsive > .table,
+    .audit-table-wrap > table,
+    [class*="table-wrap"] > table {
+        max-width: none;
+    }
+
+    .modal-dialog {
+        width: auto;
+        max-width: calc(100% - 1rem);
+        margin: .5rem auto;
+    }
+
+    .modal-content {
+        max-width: 100%;
+    }
+
+    .modal-dialog-scrollable .modal-content,
+    .modal-content {
+        max-height: calc(100dvh - 1rem);
+    }
+
+    .modal-body {
+        min-width: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .modal-header,
+    .modal-footer {
+        min-width: 0;
+        flex-wrap: wrap;
+        gap: .5rem;
+    }
+
+    .modal-footer .btn {
+        flex: 1 1 auto;
+    }
+
+    .dropdown-menu {
+        max-width: calc(100vw - 1rem);
+        overflow-wrap: anywhere;
+    }
+
+    .pagination {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .dashboard-container,
+    .pharmacy-page,
+    .pharmacy-dashboard,
+    .doctor-page,
+    .patient-page {
+        padding-right: .75rem;
+        padding-left: .75rem;
+    }
+
+    .pharmacy-page-header,
+    .page-header,
+    .doctor-page-heading,
+    .patient-page-heading,
+    .admin-page-heading,
+    .section-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: .75rem;
+    }
+
+    .pharmacy-page-actions,
+    .page-header-actions,
+    .doctor-page-heading-actions,
+    .patient-page-heading-actions,
+    .action-btn-container,
+    .filter-actions,
+    .pharmacy-filter-actions {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .pharmacy-page-actions,
+    .page-header-actions,
+    .doctor-page-heading-actions,
+    .action-btn-container,
+    .filter-actions,
+    .pharmacy-filter-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+    }
+
+    .pharmacy-page-actions > *,
+    .page-header-actions > *,
+    .doctor-page-heading-actions > *,
+    .action-btn-container > *,
+    .filter-actions > *,
+    .pharmacy-filter-actions > * {
+        min-width: 0;
+        flex: 1 1 10rem;
+    }
+
+    .pharmacy-filter-card,
+    .pharmacy-orders-filters,
+    .pharmacy-billing-filters,
+    .pharmacy-delivery-filters,
+    .filter-card,
+    .toolbar-card,
+    .list-toolbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        align-items: stretch;
+    }
+
+    .pharmacy-filter-card .form-group,
+    .pharmacy-orders-filters .form-group,
+    .pharmacy-billing-filters .form-group,
+    .pharmacy-delivery-filters .form-group,
+    .filter-card .form-group,
+    .toolbar-card .form-group,
+    .list-toolbar .form-group {
+        width: 100%;
+        min-width: 0;
+        margin-bottom: 0;
+    }
+
+    .card-header,
+    .card-body,
+    .card-footer,
+    .tblr-card-header {
+        min-width: 0;
+    }
+
+    .card-header,
+    .tblr-card-header {
+        flex-wrap: wrap;
+        gap: .5rem;
+    }
+
+    .grid,
+    [class*="-grid"] {
+        min-width: 0;
+    }
+
+    .dropdown-menu {
+        max-width: calc(100vw - 1rem);
+    }
+
+    .table td,
+    .table th {
+        max-width: 20rem;
+        overflow-wrap: anywhere;
+    }
+}
+
+@media (max-width: 420px) {
+    .dashboard-container,
+    .pharmacy-page,
+    .pharmacy-dashboard,
+    .doctor-page,
+    .patient-page {
+        padding-right: .625rem;
+        padding-left: .625rem;
+    }
+
+    .top-header {
+        padding-right: .625rem;
+        padding-left: .625rem;
+    }
+
+    .modal-dialog {
+        max-width: calc(100% - .75rem);
+        margin: .375rem auto;
+    }
+
+    .modal-dialog-scrollable .modal-content,
+    .modal-content {
+        max-height: calc(100dvh - .75rem);
+    }
+
+    .modal-footer .btn,
+    .pharmacy-page-actions > *,
+    .page-header-actions > *,
+    .doctor-page-heading-actions > *,
+    .action-btn-container > *,
+    .filter-actions > *,
+    .pharmacy-filter-actions > * {
+        flex-basis: 100%;
+        width: 100%;
+    }
+
+    .pagination .page-link {
+        padding: .45rem .6rem;
+    }
+}

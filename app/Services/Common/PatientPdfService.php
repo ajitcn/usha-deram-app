@@ -13,6 +13,109 @@ final class PatientPdfService
     private const LEFT = 42;
     private const RIGHT = 553;
 
+    /**
+     * Render the pharmacy invoice using the same canonical sections as the
+     * browser invoice: parties, medicine table, payment ledger, and totals.
+     */
+    public function generatePharmacyInvoice(array $invoice): string
+    {
+        $currency = (string) ($invoice['currency'] ?? 'INR');
+        $money = static fn ($value): string => $currency . ' ' . number_format((float) $value, 2);
+        $pages = [];
+        $page = [];
+        $y = 42;
+        $teal = [35, 78, 92];
+        $gold = [195, 165, 109];
+        $muted = [96, 114, 122];
+
+        $this->text($page, self::LEFT, $y, 'USHA DERMA', 18, true, $teal);
+        $this->text($page, 390, $y, 'INVOICE', 10, true, $muted);
+        $this->text($page, 390, $y + 18, (string) ($invoice['invoice_number'] ?? 'Not recorded'), 12, true, $teal);
+        $this->text($page, 390, $y + 32, 'Invoice date: ' . (string) ($invoice['invoice_created_at'] ?? $invoice['created_at'] ?? 'Not recorded'), 8, false, $muted);
+        $this->text($page, self::LEFT, $y + 22, 'Pharmacy invoice', 8, false, $muted);
+        $this->line($page, self::LEFT, $y + 46, self::RIGHT, $y + 46, $gold);
+        $y += 62;
+
+        $this->box($page, self::LEFT, $y, self::RIGHT, 72, [245, 248, 248], [224, 232, 233]);
+        $partyX = [52, 178, 306, 434];
+        $partyData = [
+            ['PHARMACY', (string) ($invoice['clinic_name'] ?? 'USHA DERMA Clinic'), 'USHA DERMA Pharmacy'],
+            ['PATIENT / CUSTOMER', (string) ($invoice['patient_name'] ?? 'Not recorded'), (string) ($invoice['patient_number'] ?? 'Not recorded')],
+            ['ORDER NUMBER', (string) ($invoice['order_number'] ?? 'Not recorded'), 'Currency: ' . $currency],
+            ['PAYMENT STATUS', (string) ($invoice['payment_status_label'] ?? $invoice['payment_status'] ?? 'Unpaid'), 'Reference: ' . (string) ($invoice['payment_reference'] ?? 'Not recorded')],
+        ];
+        foreach ($partyData as $index => $party) {
+            $this->text($page, $partyX[$index], $y + 17, $party[0], 7, true, $muted);
+            foreach ($this->wrap($party[1], 21) as $lineIndex => $line) {
+                $this->text($page, $partyX[$index], $y + 32 + ($lineIndex * 10), $line, 8, $lineIndex === 0, $teal);
+            }
+            $this->text($page, $partyX[$index], $y + 57, $party[2], 7, false, $muted);
+        }
+        $y += 88;
+
+        $this->box($page, self::LEFT, $y, self::RIGHT, 24, $teal, $teal);
+        $this->text($page, 52, $y + 16, 'MEDICINE', 7, true, [255, 255, 255]);
+        $this->text($page, 390, $y + 16, 'QTY', 7, true, [255, 255, 255]);
+        $this->text($page, 450, $y + 16, 'RATE', 7, true, [255, 255, 255]);
+        $this->text($page, 505, $y + 16, 'AMOUNT', 7, true, [255, 255, 255]);
+        $y += 24;
+        foreach (($invoice['items'] ?? []) as $item) {
+            $nameLines = $this->wrap((string) ($item['description'] ?? $item['medicine_name'] ?? 'Medicine'), 50);
+            $height = max(25, count($nameLines) * 10 + 12);
+            if ($y + $height > 730) {
+                $this->footer($page);
+                $pages[] = $page;
+                $page = [];
+                $y = 42;
+                $this->text($page, self::LEFT, $y, 'USHA DERMA', 14, true, $teal);
+                $this->text($page, 390, $y, 'INVOICE (continued)', 9, true, $muted);
+                $y += 28;
+            }
+            $this->box($page, self::LEFT, $y, self::RIGHT, $height, [255, 255, 255], [228, 235, 236]);
+            foreach ($nameLines as $lineIndex => $line) $this->text($page, 52, $y + 16 + ($lineIndex * 10), $line, 8, $lineIndex === 0, [38, 52, 58]);
+            $this->text($page, 390, $y + 16, number_format((float) ($item['quantity'] ?? 0), 2), 8, false, [38, 52, 58]);
+            $this->text($page, 450, $y + 16, $money($item['unit_price'] ?? 0), 8, false, [38, 52, 58]);
+            $this->text($page, 505, $y + 16, $money($item['line_total'] ?? 0), 8, true, [38, 52, 58]);
+            $y += $height;
+        }
+        if (($invoice['items'] ?? []) === []) {
+            $this->box($page, self::LEFT, $y, self::RIGHT, 26, [255, 255, 255], [228, 235, 236]);
+            $this->text($page, 52, $y + 16, 'No medicine items recorded.', 8, false, $muted);
+            $y += 26;
+        }
+        $y += 24;
+
+        $this->text($page, self::LEFT, $y, 'PAYMENT HISTORY', 9, true, $teal);
+        $ledgerY = $y + 16;
+        foreach (($invoice['payment_history'] ?? []) as $payment) {
+            if ($ledgerY > 755) break;
+            $this->text($page, self::LEFT, $ledgerY, (string) ($payment['paid_at'] ?? 'Not recorded'), 7, false, $muted);
+            $this->text($page, self::LEFT, $ledgerY + 11, (string) ($payment['payment_method'] ?? 'Not recorded') . ' | ' . (string) ($payment['reference_number'] ?? 'No reference'), 7, false, [38, 52, 58]);
+            $this->text($page, 220, $ledgerY + 6, $money($payment['amount'] ?? 0), 8, true, $teal);
+            $ledgerY += 30;
+        }
+        if (($invoice['payment_history'] ?? []) === []) $this->text($page, self::LEFT, $ledgerY, 'No payments recorded.', 8, false, $muted);
+
+        $totalY = $y - 4;
+        $this->box($page, 350, $totalY, self::RIGHT, 168, [251, 252, 252], [217, 227, 229]);
+        $totalRows = [['Medicine subtotal', $money($invoice['subtotal'] ?? 0)], ['Packaging charges', $money($invoice['tax'] ?? 0)], ['Discount', '-' . $money($invoice['discount'] ?? 0)], ['Grand total', $money($invoice['amount'] ?? 0)], ['Paid amount', $money($invoice['paid_amount'] ?? 0)], ['Remaining balance', $money($invoice['remaining_balance'] ?? 0)]];
+        foreach ($totalRows as $index => [$label, $value]) {
+            $rowY = $totalY + 25 + ($index * 25);
+            if ($index === 3) {
+                $this->box($page, 350, $rowY - 17, self::RIGHT, 25, $teal, $teal);
+                $this->text($page, 362, $rowY, $label, 8, true, [255, 255, 255]);
+                $this->text($page, 465, $rowY, $value, 8, true, [255, 255, 255]);
+            } else {
+                $this->text($page, 362, $rowY, $label, 8, $index === 0, $muted);
+                $this->text($page, 465, $rowY, $value, 8, true, $teal);
+            }
+        }
+        $this->footer($page);
+        $pages[] = $page;
+
+        return $this->build($pages);
+    }
+
     public function generate(string $title, string $reference, array $clinic, array $patient, array $sections): string
     {
         $pages = [];
@@ -69,10 +172,10 @@ final class PatientPdfService
 
     private function header(array &$page, array $clinic, string $title, string $reference, int &$y): void
     {
-        $this->text($page, self::LEFT, $y, 'ROOTINS', 18, true, [31, 78, 121]);
+        $this->text($page, self::LEFT, $y, 'USHA DERMA', 18, true, [31, 78, 121]);
         $this->text($page, 390, $y, $title, 12, true, [31, 78, 121]);
         $y += 18;
-        $this->text($page, self::LEFT, $y, (string) ($clinic['clinic_name'] ?? 'ROOTINS Clinic'), 10, true);
+        $this->text($page, self::LEFT, $y, (string) ($clinic['clinic_name'] ?? 'USHA DERMA Clinic'), 10, true);
         $this->text($page, 390, $y, $reference, 8, false, [80, 88, 100]);
         $y += 14;
         $clinicLine = implode(' | ', array_filter([(string) ($clinic['address'] ?? ''), (string) ($clinic['mobile'] ?? ''), (string) ($clinic['email'] ?? '')]));
@@ -88,7 +191,7 @@ final class PatientPdfService
     private function footer(array &$page): void
     {
         $this->line($page, self::LEFT, 790, self::RIGHT, 790, [210, 210, 210]);
-        $this->text($page, self::LEFT, 808, 'Generated by ROOTINS', 7, false, [110, 110, 110]);
+        $this->text($page, self::LEFT, 808, 'Generated by USHA DERMA', 7, false, [110, 110, 110]);
         $this->text($page, 455, 808, 'Patient copy', 7, false, [110, 110, 110]);
     }
 
